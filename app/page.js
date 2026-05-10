@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import SiteShell from '@/components/site/site-shell'
 import { IMG, NGO_FULL_NAME, PROGRAMS, BLOG_POSTS, CATEGORY_LABEL, CATEGORY_COLOR } from '@/lib/content'
+import { useContent } from '@/components/site/content-provider'
 
 const ICONS = { GraduationCap, LifeBuoy, Leaf, Stethoscope }
 
@@ -29,28 +30,41 @@ const TESTIMONIALS = [
 //  HERO
 // ────────────────────────────────────────────────────────────
 function Hero() {
+  const badge = useContent('home.hero.badge', 'Registered NGO • Serving since 2008')
+  const headline = useContent('home.hero.headline', 'Hope has a home.')
+  const tagline = useContent('home.hero.tagline', NGO_FULL_NAME)
+  const subline = useContent('home.hero.subline', 'A community-driven non-profit working across Education, Disaster Relief, Environment and Healthcare — with full transparency.')
+  const image = useContent('home.hero.image', IMG.hero)
+  const ctaPrimaryLabel = useContent('home.hero.ctaPrimary.label', 'Explore Our Programs')
+  const ctaPrimaryHref = useContent('home.hero.ctaPrimary.href', '/programs')
+  const ctaSecondaryLabel = useContent('home.hero.ctaSecondary.label', 'Join the Mission')
+  const ctaSecondaryHref = useContent('home.hero.ctaSecondary.href', '/membership')
+
+  // Highlight the last word of the headline in amber.
+  const words = (headline || '').split(' ')
+  const lastWord = words.length > 1 ? words.pop() : ''
+  const prefix = words.join(' ')
+
   return (
     <section id="home" className="relative h-[100vh] min-h-[680px] w-full overflow-hidden">
-      <img src={IMG.hero} alt="Volunteers from Maa Karma Devi Sangh Trust serving the community" className="absolute inset-0 w-full h-full object-cover" />
+      <img src={image} alt="Volunteers from Maa Karma Devi Sangh Trust serving the community" className="absolute inset-0 w-full h-full object-cover" />
       <div className="absolute inset-0 hero-overlay" />
       <div className="relative container h-full flex flex-col justify-center pt-20">
         <div className="max-w-3xl animate-fade-up">
           <Badge className="bg-amber-500/20 text-amber-300 border border-amber-400/30 hover:bg-amber-500/20 mb-5 backdrop-blur-sm">
-            <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Registered NGO • Serving since 2008
+            <Sparkles className="w-3.5 h-3.5 mr-1.5" /> {badge}
           </Badge>
           <h1 className="font-[Playfair_Display] text-5xl sm:text-6xl lg:text-7xl font-bold text-white text-balance leading-[1.05] mb-5">
-            Hope has a <span className="text-amber-400">home.</span>
+            {prefix} {lastWord && <span className="text-amber-400">{lastWord}</span>}
           </h1>
-          <p className="text-base sm:text-lg text-white/85 mb-2 max-w-2xl"><span className="font-semibold text-white">{NGO_FULL_NAME}</span></p>
-          <p className="text-lg sm:text-xl text-white/85 mb-9 max-w-2xl text-balance">
-            A community-driven non-profit working across <span className="text-amber-300 font-semibold">Education</span>, <span className="text-amber-300 font-semibold">Disaster Relief</span>, <span className="text-amber-300 font-semibold">Environment</span> and <span className="text-amber-300 font-semibold">Healthcare</span> — with full transparency.
-          </p>
+          <p className="text-base sm:text-lg text-white/85 mb-2 max-w-2xl"><span className="font-semibold text-white">{tagline}</span></p>
+          <p className="text-lg sm:text-xl text-white/85 mb-9 max-w-2xl text-balance">{subline}</p>
           <div className="flex flex-col sm:flex-row gap-3">
             <Button asChild size="lg" className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold shadow-xl shadow-amber-500/30 h-12 px-7">
-              <Link href="/programs">Explore Our Programs <ArrowRight className="w-5 h-5 ml-2" /></Link>
+              <Link href={ctaPrimaryHref || '/programs'}>{ctaPrimaryLabel} <ArrowRight className="w-5 h-5 ml-2" /></Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/40 backdrop-blur-sm h-12 px-7">
-              <Link href="/membership"><HandHeart className="w-5 h-5 mr-2" /> Join the Mission</Link>
+              <Link href={ctaSecondaryHref || '/membership'}><HandHeart className="w-5 h-5 mr-2" /> {ctaSecondaryLabel}</Link>
             </Button>
           </div>
         </div>
@@ -71,32 +85,42 @@ function Hero() {
 //  ABOUT (teaser)
 // ────────────────────────────────────────────────────────────
 function About() {
+  const headline = useContent('home.about.headline', 'A Trust born of devotion, grown by service.')
+  const body1 = useContent('home.about.body1', `Founded in 2008 in the holy land of Odisha, the Trust began as a small community kitchen serving the elderly and homeless near the temples of Puri.`)
+  const body2 = useContent('home.about.body2', `Today, we are a pan-India movement working across four pillars — Education, Disaster Relief, Environment and Healthcare.`)
+  const image = useContent('home.about.image', IMG.about)
+  const stat1Value = useContent('home.about.stat1.value', '17+')
+  const stat1Label = useContent('home.about.stat1.label', 'Years of selfless service')
+  const stat2Value = useContent('home.about.stat2.value', '4,200+')
+  const stat2Label = useContent('home.about.stat2.label', 'Lives transformed')
+
+  // Highlight last 2 words of headline (legacy visual treatment).
+  const words = (headline || '').split(' ')
+  const tail = words.length > 2 ? words.splice(-2).join(' ') : ''
+  const head = words.join(' ')
+
   return (
     <section id="about" className="py-24 lg:py-32 bg-white">
       <div className="container grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
         <div className="relative">
-          <img src={IMG.about} alt="Community we serve" className="rounded-2xl shadow-2xl w-full aspect-[4/5] object-cover" />
+          <img src={image} alt="Community we serve" className="rounded-2xl shadow-2xl w-full aspect-[4/5] object-cover" />
           <div className="absolute -bottom-6 -right-6 bg-white rounded-2xl shadow-xl px-6 py-5 border max-w-[250px] hidden md:block">
-            <div className="text-3xl font-bold text-blue-900">17+</div>
-            <div className="text-sm text-slate-600">Years of selfless service to the underprivileged</div>
+            <div className="text-3xl font-bold text-blue-900">{stat1Value}</div>
+            <div className="text-sm text-slate-600">{stat1Label}</div>
           </div>
           <div className="absolute -top-6 -left-6 gradient-trust text-white rounded-2xl shadow-xl px-6 py-5 max-w-[200px] hidden md:block">
-            <div className="text-3xl font-bold">4,200+</div>
-            <div className="text-sm text-white/90">Lives transformed</div>
+            <div className="text-3xl font-bold">{stat2Value}</div>
+            <div className="text-sm text-white/90">{stat2Label}</div>
           </div>
         </div>
 
         <div>
           <Badge variant="secondary" className="bg-blue-50 text-blue-800 border-blue-100 mb-4">About Us</Badge>
           <h2 className="font-[Playfair_Display] text-4xl lg:text-5xl font-bold text-slate-900 mb-6 leading-tight">
-            A Trust born of devotion, <span className="text-blue-800">grown by service.</span>
+            {head} {tail && <span className="text-blue-800">{tail}</span>}
           </h2>
-          <p className="text-slate-600 text-lg mb-4 leading-relaxed">
-            Founded in <strong>2008</strong> in the holy land of Odisha, <strong>{NGO_FULL_NAME}</strong> began as a small community kitchen serving the elderly and homeless near the temples of Puri.
-          </p>
-          <p className="text-slate-600 text-lg mb-7 leading-relaxed">
-            Today, we are a pan-India movement working across <strong className="text-blue-800">four pillars</strong> — Education, Disaster Relief, Environment and Healthcare — guided by the timeless values of <em>seva</em>, transparency and compassion.
-          </p>
+          <p className="text-slate-600 text-lg mb-4 leading-relaxed">{body1}</p>
+          <p className="text-slate-600 text-lg mb-7 leading-relaxed">{body2}</p>
 
           <div className="grid grid-cols-2 gap-4 mb-8">
             <div className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" /><span className="text-slate-700 text-sm">Registered Trust under Indian Trust Act 1882</span></div>

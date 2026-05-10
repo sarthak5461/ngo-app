@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import SiteShell from '@/components/site/site-shell'
 import { Card, CardContent } from '@/components/ui/card'
@@ -5,11 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { CheckCircle2, Sparkles, Heart, Award, Shield, Users, ArrowRight } from 'lucide-react'
 import { IMG, NGO_FULL_NAME } from '@/lib/content'
-
-export const metadata = {
-  title: 'About Us | Maa Karma Devi Sangh Trust',
-  description: 'Learn about Shree Jagannath Swami Bhakt Shiromadi Maa Karma Devi Sangh Trust — 17 years of seva across Education, Disaster Relief and Environment in India.',
-}
+import { useContent } from '@/components/site/content-provider'
 
 const TRUSTEES = [
   { name: 'Sri Bhagaban Mohanty', role: 'Founder & Chief Trustee', bio: 'Retired schoolmaster and lifelong devotee of Lord Jagannath. Founded the Trust in 2008.' },
@@ -28,18 +26,29 @@ const VALUES = [
 ]
 
 export default function AboutPage() {
+  const heroHeadline = useContent('about.hero.headline', 'A Trust born of devotion, grown by service.')
+  const heroImage = useContent('about.hero.image', IMG.about)
+  const storyBody = useContent('about.story.body', '')
+  const missionText = useContent('about.mission.text', 'To uplift the most vulnerable sections of Indian society by delivering education, emergency relief and a healthier environment — with full accountability to our donors and dignity to our beneficiaries.')
+  const visionText = useContent('about.vision.text', 'An India where every child is in school, every disaster victim is rescued within hours, and every village has clean air, clean water, and the hope of a sustainable tomorrow.')
+
+  // Highlight last 2 words of headline for legacy visual.
+  const words = (heroHeadline || '').split(' ')
+  const tail = words.length > 2 ? words.splice(-2).join(' ') : ''
+  const head = words.join(' ')
+
   return (
     <SiteShell solidHeader={false}>
       {/* Hero */}
       <section className="relative h-[70vh] min-h-[500px] w-full overflow-hidden">
-        <img src={IMG.about} alt="Community we serve" className="absolute inset-0 w-full h-full object-cover" />
+        <img src={heroImage} alt="Community we serve" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 hero-overlay" />
         <div className="relative container h-full flex flex-col justify-center pt-20">
           <Badge className="bg-amber-500/20 text-amber-300 border border-amber-400/30 hover:bg-amber-500/20 mb-5 backdrop-blur-sm w-fit">
             <Sparkles className="w-3.5 h-3.5 mr-1.5" /> About the Trust
           </Badge>
           <h1 className="font-[Playfair_Display] text-5xl lg:text-6xl font-bold text-white text-balance leading-[1.05] mb-4 max-w-3xl">
-            A Trust born of devotion, <span className="text-amber-400">grown by service.</span>
+            {head} {tail && <span className="text-amber-400">{tail}</span>}
           </h1>
           <p className="text-lg text-white/85 max-w-2xl">{NGO_FULL_NAME}</p>
         </div>
@@ -51,9 +60,15 @@ export default function AboutPage() {
           <Badge variant="secondary" className="bg-blue-50 text-blue-800 border-blue-100 mb-4">Our Story</Badge>
           <h2 className="font-[Playfair_Display] text-4xl font-bold text-slate-900 mb-6">From a community kitchen, to eleven states.</h2>
           <div className="prose prose-lg max-w-none text-slate-700 space-y-5 leading-relaxed">
-            <p>The Trust began in <strong>2008</strong>, in a borrowed room three lanes from the Jagannath Temple in Puri. Sri Bhagaban Mohanty, a retired schoolmaster, had spent his pension on a daily lunch programme for the elderly homeless who slept along the temple wall. By the third year, the queue was 240 people long.</p>
-            <p>What began as one man’s daily seva became, over the next decade, a registered Trust with three flagship programmes — Education, Disaster Relief and Environment — boots-on-ground in <strong>eleven states</strong>, and a volunteer base of over <strong>240 active workers</strong>.</p>
-            <p>We have never taken a government grant. We are funded entirely by individual donors and a small number of corporate CSR partners who share our values. This independence is what allows us to speak honestly about what works in development — and what doesn’t.</p>
+            {storyBody ? (
+              storyBody.split(/\n\n+/).map((para, i) => <p key={i}>{para}</p>)
+            ) : (
+              <>
+                <p>The Trust began in <strong>2008</strong>, in a borrowed room three lanes from the Jagannath Temple in Puri. Sri Bhagaban Mohanty, a retired schoolmaster, had spent his pension on a daily lunch programme for the elderly homeless who slept along the temple wall. By the third year, the queue was 240 people long.</p>
+                <p>What began as one man’s daily seva became, over the next decade, a registered Trust with three flagship programmes — Education, Disaster Relief and Environment — boots-on-ground in <strong>eleven states</strong>, and a volunteer base of over <strong>240 active workers</strong>.</p>
+                <p>We have never taken a government grant. We are funded entirely by individual donors and a small number of corporate CSR partners who share our values. This independence is what allows us to speak honestly about what works in development — and what doesn’t.</p>
+              </>
+            )}
           </div>
 
           <div className="grid sm:grid-cols-2 gap-3 mt-10">
@@ -105,14 +120,14 @@ export default function AboutPage() {
             <CardContent className="p-8">
               <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center mb-4"><Sparkles className="w-6 h-6 text-amber-300" /></div>
               <h3 className="font-[Playfair_Display] text-2xl font-bold mb-3">Our Mission</h3>
-              <p className="text-white/85 leading-relaxed">To uplift the most vulnerable sections of Indian society by delivering education, emergency relief and a healthier environment — with full accountability to our donors and dignity to our beneficiaries.</p>
+              <p className="text-white/85 leading-relaxed">{missionText}</p>
             </CardContent>
           </Card>
           <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 to-amber-100">
             <CardContent className="p-8">
               <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center mb-4"><Heart className="w-6 h-6 text-white fill-white" /></div>
               <h3 className="font-[Playfair_Display] text-2xl font-bold mb-3 text-slate-900">Our Vision</h3>
-              <p className="text-slate-700 leading-relaxed">An India where every child is in school, every disaster victim is rescued within hours, and every village has clean air, clean water, and the hope of a sustainable tomorrow.</p>
+              <p className="text-slate-700 leading-relaxed">{visionText}</p>
             </CardContent>
           </Card>
         </div>
