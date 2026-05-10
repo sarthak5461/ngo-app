@@ -4,21 +4,20 @@ import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import {
-  Heart, GraduationCap, LifeBuoy, Leaf, Users, Phone, Mail, MapPin,
+  Heart, GraduationCap, LifeBuoy, Leaf, Stethoscope, Users,
   CheckCircle2, ArrowRight, Quote, Shield, Sparkles, Loader2,
   HandHeart, Building2, Award, Calendar,
 } from 'lucide-react'
 import SiteShell from '@/components/site/site-shell'
-import { useDonate } from '@/components/site/donate-provider'
 import { IMG, NGO_FULL_NAME, PROGRAMS, BLOG_POSTS, CATEGORY_LABEL, CATEGORY_COLOR } from '@/lib/content'
 
-const ICONS = { GraduationCap, LifeBuoy, Leaf }
+const ICONS = { GraduationCap, LifeBuoy, Leaf, Stethoscope }
 
 const TESTIMONIALS = [
   { name: 'Sushila Devi', role: 'Mother, Bhubaneswar', quote: "When the cyclone took our home, the Trust's volunteers reached us before anyone else. They gave us food, medicines and hope." },
@@ -26,11 +25,10 @@ const TESTIMONIALS = [
   { name: 'Anjali Sahu', role: 'Volunteer, Kolkata', quote: 'I started by helping in one tree-plantation drive. Two years on, this Trust has become my family. Pure service, zero politics.' },
 ]
 
-// ───────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
 //  HERO
-// ───────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
 function Hero() {
-  const { open } = useDonate()
   return (
     <section id="home" className="relative h-[100vh] min-h-[680px] w-full overflow-hidden">
       <img src={IMG.hero} alt="Volunteers from Maa Karma Devi Sangh Trust serving the community" className="absolute inset-0 w-full h-full object-cover" />
@@ -44,15 +42,15 @@ function Hero() {
             Hope has a <span className="text-amber-400">home.</span>
           </h1>
           <p className="text-base sm:text-lg text-white/85 mb-2 max-w-2xl"><span className="font-semibold text-white">{NGO_FULL_NAME}</span></p>
-          <p className="text-lg sm:text-xl text-white/85 mb-8 max-w-2xl text-balance">
-            Empowering India&apos;s most vulnerable communities through <span className="text-amber-300 font-semibold">Education</span>, <span className="text-amber-300 font-semibold">Disaster Relief</span> and <span className="text-amber-300 font-semibold">Environmental Action</span>.
+          <p className="text-lg sm:text-xl text-white/85 mb-9 max-w-2xl text-balance">
+            A community-driven non-profit working across <span className="text-amber-300 font-semibold">Education</span>, <span className="text-amber-300 font-semibold">Disaster Relief</span>, <span className="text-amber-300 font-semibold">Environment</span> and <span className="text-amber-300 font-semibold">Healthcare</span> — with full transparency.
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button onClick={() => open()} size="lg" className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold shadow-xl shadow-amber-500/30 h-12 px-7">
-              <Heart className="w-5 h-5 mr-2 fill-current" /> Donate Now
+            <Button asChild size="lg" className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold shadow-xl shadow-amber-500/30 h-12 px-7">
+              <Link href="/programs">Explore Our Programs <ArrowRight className="w-5 h-5 ml-2" /></Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/40 backdrop-blur-sm h-12 px-7">
-              <a href="#volunteer"><Users className="w-5 h-5 mr-2" /> Become a Volunteer</a>
+              <Link href="/membership"><HandHeart className="w-5 h-5 mr-2" /> Join the Mission</Link>
             </Button>
           </div>
         </div>
@@ -69,13 +67,13 @@ function Hero() {
   )
 }
 
-// ───────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
 //  ABOUT (teaser)
-// ───────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
 function About() {
   return (
-    <section id="about" className="py-20 lg:py-28 bg-white">
-      <div className="container grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+    <section id="about" className="py-24 lg:py-32 bg-white">
+      <div className="container grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
         <div className="relative">
           <img src={IMG.about} alt="Community we serve" className="rounded-2xl shadow-2xl w-full aspect-[4/5] object-cover" />
           <div className="absolute -bottom-6 -right-6 bg-white rounded-2xl shadow-xl px-6 py-5 border max-w-[250px] hidden md:block">
@@ -96,15 +94,15 @@ function About() {
           <p className="text-slate-600 text-lg mb-4 leading-relaxed">
             Founded in <strong>2008</strong> in the holy land of Odisha, <strong>{NGO_FULL_NAME}</strong> began as a small community kitchen serving the elderly and homeless near the temples of Puri.
           </p>
-          <p className="text-slate-600 text-lg mb-6 leading-relaxed">
-            Today, we are a pan-India movement working across <strong className="text-blue-800">three pillars</strong> — Education, Disaster Relief and Environmental Action — guided by the timeless values of <em>seva</em>, transparency and compassion.
+          <p className="text-slate-600 text-lg mb-7 leading-relaxed">
+            Today, we are a pan-India movement working across <strong className="text-blue-800">four pillars</strong> — Education, Disaster Relief, Environment and Healthcare — guided by the timeless values of <em>seva</em>, transparency and compassion.
           </p>
 
-          <div className="grid grid-cols-2 gap-4 mb-7">
-            <div className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" /><span className="text-slate-700">Registered Trust under Indian Trust Act 1882</span></div>
-            <div className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" /><span className="text-slate-700">12A &amp; 80G certified — donations are tax exempt</span></div>
-            <div className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" /><span className="text-slate-700">Audited financials, public annual report</span></div>
-            <div className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" /><span className="text-slate-700">Boots-on-ground volunteers in 11 states</span></div>
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" /><span className="text-slate-700 text-sm">Registered Trust under Indian Trust Act 1882</span></div>
+            <div className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" /><span className="text-slate-700 text-sm">12A &amp; 80G certified</span></div>
+            <div className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" /><span className="text-slate-700 text-sm">Audited financials, public annual report</span></div>
+            <div className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" /><span className="text-slate-700 text-sm">Volunteers in 11 states across India</span></div>
           </div>
 
           <Button asChild className="gradient-trust text-white"><Link href="/about">Read our full story <ArrowRight className="w-4 h-4 ml-2" /></Link></Button>
@@ -114,44 +112,41 @@ function About() {
   )
 }
 
-// ───────────────────────────────────────────────────────────────────────────
-//  PROGRAMS (cards link to /programs/[slug])
-// ───────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
+//  PROGRAMS (no donate buttons — only "Explore Program" links)
+// ────────────────────────────────────────────────────────────
 function Programs() {
-  const { open } = useDonate()
   return (
-    <section id="programs" className="py-20 lg:py-28 bg-slate-50">
+    <section id="programs" className="py-24 lg:py-32 bg-slate-50">
       <div className="container">
-        <div className="text-center max-w-2xl mx-auto mb-14">
+        <div className="text-center max-w-2xl mx-auto mb-16">
           <Badge variant="secondary" className="bg-blue-50 text-blue-800 border-blue-100 mb-4">What We Do</Badge>
-          <h2 className="font-[Playfair_Display] text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Three pillars, one purpose.</h2>
-          <p className="text-slate-600 text-lg">Every rupee you give is channelled into one of these three flagship programmes — each measurable, transparent, and on the ground.</p>
+          <h2 className="font-[Playfair_Display] text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Four pillars, one purpose.</h2>
+          <p className="text-slate-600 text-lg">Each programme is measurable, transparent, and run by volunteers from the communities we serve.</p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-7">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {PROGRAMS.map(p => {
             const Icon = ICONS[p.icon]
             return (
-              <Card key={p.slug} className="group overflow-hidden border-0 shadow-md hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-white">
-                <Link href={`/programs/${p.slug}`} className="block relative h-56 overflow-hidden">
-                  <img src={p.image} alt={p.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                  <div className="absolute top-4 left-4 w-12 h-12 rounded-xl bg-white/95 backdrop-blur flex items-center justify-center shadow-lg">
-                    <Icon className="w-6 h-6 text-blue-800" />
+              <Link key={p.slug} href={`/programs/${p.slug}`} className="group">
+                <Card className="overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white h-full">
+                  <div className="relative h-48 overflow-hidden">
+                    <img src={p.image} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                    <div className="absolute top-3 left-3 w-10 h-10 rounded-lg bg-white/95 backdrop-blur flex items-center justify-center shadow">
+                      {Icon ? <Icon className="w-5 h-5 text-blue-800" /> : null}
+                    </div>
                   </div>
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <p className="text-white/90 text-sm italic">{p.tagline}</p>
-                  </div>
-                </Link>
-                <CardContent className="p-6">
-                  <Link href={`/programs/${p.slug}`}><h3 className="font-[Playfair_Display] text-2xl font-bold text-slate-900 mb-2 hover:text-blue-800 transition">{p.title}</h3></Link>
-                  <p className="text-slate-600 mb-4 leading-relaxed line-clamp-3">{p.shortDesc}</p>
-                  <div className="flex items-center justify-between pt-4 border-t gap-2">
-                    <Button asChild variant="ghost" size="sm" className="text-blue-800 hover:text-blue-900 hover:bg-blue-50"><Link href={`/programs/${p.slug}`}>Learn more <ArrowRight className="w-4 h-4 ml-1" /></Link></Button>
-                    <Button onClick={() => open(p.slug)} size="sm" className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold"><Heart className="w-4 h-4 mr-1.5 fill-current" /> Donate</Button>
-                  </div>
-                </CardContent>
-              </Card>
+                  <CardContent className="p-5">
+                    <h3 className="font-[Playfair_Display] text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-800 transition">{p.title}</h3>
+                    <p className="text-sm text-slate-600 mb-4 line-clamp-3 leading-relaxed">{p.shortDesc}</p>
+                    <span className="inline-flex items-center text-sm font-semibold text-blue-800 group-hover:translate-x-1 transition-transform">
+                      Explore Program <ArrowRight className="w-4 h-4 ml-1.5" />
+                    </span>
+                  </CardContent>
+                </Card>
+              </Link>
             )
           })}
         </div>
@@ -160,9 +155,9 @@ function Programs() {
   )
 }
 
-// ───────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
 //  IMPACT
-// ───────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
 function CountUp({ end, duration = 1500, suffix = '' }) {
   const [n, setN] = useState(0)
   const ref = useRef(null)
@@ -188,32 +183,30 @@ function CountUp({ end, duration = 1500, suffix = '' }) {
 
 function Impact() {
   const [stats, setStats] = useState({ totalRaised: 0, donorCount: 0, volunteerCount: 0, livesImpacted: 4200, projectsCount: 12 })
-  useEffect(() => {
-    fetch('/api/stats').then(r => r.json()).then(setStats).catch(() => {})
-  }, [])
+  useEffect(() => { fetch('/api/stats').then(r => r.json()).then(setStats).catch(() => {}) }, [])
 
   const tiles = [
     { label: 'Lives Impacted', value: stats.livesImpacted, icon: HandHeart, suffix: '+' },
-    { label: 'Donors', value: Math.max(stats.donorCount, 86), icon: Heart, suffix: '+' },
+    { label: 'Members & Donors', value: Math.max(stats.donorCount, 86), icon: Heart, suffix: '+' },
     { label: 'Volunteers', value: Math.max(stats.volunteerCount, 240), icon: Users, suffix: '+' },
     { label: 'Active Projects', value: stats.projectsCount, icon: Building2, suffix: '' },
   ]
 
   return (
-    <section id="impact" className="py-20 lg:py-24 gradient-trust text-white relative overflow-hidden">
+    <section id="impact" className="py-24 lg:py-28 gradient-trust text-white relative overflow-hidden">
       <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, white 1px, transparent 1px), radial-gradient(circle at 80% 70%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
       <div className="container relative">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <Badge className="bg-amber-400/20 text-amber-200 border border-amber-300/30 hover:bg-amber-400/20 mb-4">Our Impact</Badge>
           <h2 className="font-[Playfair_Display] text-4xl lg:text-5xl font-bold mb-4">Numbers that mean lives.</h2>
-          <p className="text-white/80 text-lg">17 years of service, audited every year, visible to every donor.</p>
+          <p className="text-white/80 text-lg">17 years of service, audited every year, visible to everyone who supports us.</p>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           {tiles.map((t, i) => {
             const Icon = t.icon
             return (
-              <div key={i} className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-6 text-center hover:bg-white/15 transition">
+              <div key={i} className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-7 text-center hover:bg-white/15 transition">
                 <Icon className="w-8 h-8 text-amber-300 mx-auto mb-3" />
                 <div className="text-3xl lg:text-4xl font-bold mb-1"><CountUp end={t.value} suffix={t.suffix} /></div>
                 <div className="text-white/75 text-sm">{t.label}</div>
@@ -221,24 +214,57 @@ function Impact() {
             )
           })}
         </div>
-
-        {stats.totalRaised > 0 && (
-          <div className="text-center mt-10 text-white/80">
-            <span className="text-amber-300 font-bold text-lg">₹{stats.totalRaised.toLocaleString('en-IN')}</span> raised through this platform
-          </div>
-        )}
       </div>
     </section>
   )
 }
 
-// ───────────────────────────────────────────────────────────────────────────
-//  GALLERY
-// ───────────────────────────────────────────────────────────────────────────
-function Gallery() {
-  const items = [IMG.education, IMG.disaster, IMG.environment, IMG.community, IMG.about, IMG.hero]
+// ────────────────────────────────────────────────────────────
+//  TRANSPARENCY (replaces aggressive donate banner)
+// ────────────────────────────────────────────────────────────
+function Transparency() {
+  const items = [
+    { stat: '87.4%', label: 'Of every rupee reaches the field', icon: Shield },
+    { stat: 'CA-audited', label: 'Independent annual audit since 2011', icon: Award },
+    { stat: 'Public', label: 'Annual report — free download', icon: Building2 },
+  ]
   return (
-    <section id="gallery" className="py-20 lg:py-28 bg-white">
+    <section className="py-24 lg:py-28 bg-white">
+      <div className="container max-w-5xl">
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <Badge variant="secondary" className="bg-emerald-50 text-emerald-800 border-emerald-100 mb-4">Transparency</Badge>
+          <h2 className="font-[Playfair_Display] text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Trust isn&apos;t given. It&apos;s shown.</h2>
+          <p className="text-slate-600 text-lg">We hold ourselves to a strict 85/15 promise — at least 85% of every contribution must reach the field. Our books are open.</p>
+        </div>
+        <div className="grid md:grid-cols-3 gap-5">
+          {items.map((it, i) => {
+            const Icon = it.icon
+            return (
+              <Card key={i} className="border-0 shadow-md hover:shadow-lg transition">
+                <CardContent className="p-7 text-center">
+                  <div className="w-12 h-12 mx-auto rounded-xl gradient-trust flex items-center justify-center mb-4"><Icon className="w-6 h-6 text-white" /></div>
+                  <div className="text-3xl font-bold text-blue-900 mb-1">{it.stat}</div>
+                  <div className="text-slate-600">{it.label}</div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+        <div className="text-center mt-9">
+          <Button asChild variant="outline" className="border-blue-200 text-blue-800 hover:bg-blue-50"><Link href="/blog/annual-report-2024">Read Annual Report 2024 <ArrowRight className="w-4 h-4 ml-2" /></Link></Button>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ────────────────────────────────────────────────────────────
+//  GALLERY
+// ────────────────────────────────────────────────────────────
+function Gallery() {
+  const items = [IMG.education, IMG.disaster, IMG.environment, IMG.healthcare, IMG.community, IMG.about]
+  return (
+    <section id="gallery" className="py-24 lg:py-28 bg-slate-50">
       <div className="container">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <Badge variant="secondary" className="bg-blue-50 text-blue-800 border-blue-100 mb-4">Gallery</Badge>
@@ -248,8 +274,7 @@ function Gallery() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
           {items.map((src, i) => (
             <div key={i} className={`relative overflow-hidden rounded-xl group ${i === 0 ? 'lg:row-span-2 lg:col-span-2' : ''}`}>
-              <img src={src} alt={`Gallery ${i + 1}`} className={`w-full object-cover group-hover:scale-110 transition-transform duration-700 ${i === 0 ? 'h-full min-h-[300px] lg:min-h-[420px]' : 'h-44 lg:h-52'}`} />
-              <div className="absolute inset-0 bg-gradient-to-t from-blue-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <img src={src} alt={`Gallery ${i + 1}`} className={`w-full object-cover group-hover:scale-105 transition-transform duration-500 ${i === 0 ? 'h-full min-h-[300px] lg:min-h-[420px]' : 'h-44 lg:h-52'}`} />
             </div>
           ))}
         </div>
@@ -258,27 +283,27 @@ function Gallery() {
   )
 }
 
-// ───────────────────────────────────────────────────────────────────────────
-//  LATEST FROM BLOG
-// ───────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
+//  BLOG TEASER
+// ────────────────────────────────────────────────────────────
 function BlogTeaser() {
   const posts = BLOG_POSTS.slice(0, 3)
   return (
-    <section className="py-20 lg:py-28 bg-slate-50">
+    <section className="py-24 lg:py-28 bg-white">
       <div className="container">
-        <div className="flex items-end justify-between mb-12">
+        <div className="flex items-end justify-between mb-12 flex-wrap gap-4">
           <div>
             <Badge variant="secondary" className="bg-blue-50 text-blue-800 border-blue-100 mb-4">From the Blog</Badge>
             <h2 className="font-[Playfair_Display] text-4xl lg:text-5xl font-bold text-slate-900">Latest stories from the field.</h2>
           </div>
-          <Button variant="ghost" asChild className="hidden md:inline-flex"><Link href="/blog">Read all <ArrowRight className="w-4 h-4 ml-2" /></Link></Button>
+          <Button variant="ghost" asChild className="hidden md:inline-flex text-blue-800 hover:bg-blue-50"><Link href="/blog">Read all <ArrowRight className="w-4 h-4 ml-2" /></Link></Button>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
           {posts.map(post => (
             <Link key={post.slug} href={`/blog/${post.slug}`} className="group">
-              <Card className="border-0 shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden h-full bg-white">
+              <Card className="border-0 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden h-full bg-white">
                 <div className="relative h-52 overflow-hidden">
-                  <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                  <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <CardContent className="p-6">
                   <Badge variant="secondary" className={`mb-3 ${CATEGORY_COLOR[post.category]}`}>{CATEGORY_LABEL[post.category]}</Badge>
@@ -293,20 +318,17 @@ function BlogTeaser() {
             </Link>
           ))}
         </div>
-        <div className="text-center mt-8 md:hidden">
-          <Button variant="outline" asChild><Link href="/blog">Read all stories <ArrowRight className="w-4 h-4 ml-2" /></Link></Button>
-        </div>
       </div>
     </section>
   )
 }
 
-// ───────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
 //  TESTIMONIALS
-// ───────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
 function Testimonials() {
   return (
-    <section className="py-20 lg:py-28 bg-white">
+    <section className="py-24 lg:py-28 bg-slate-50">
       <div className="container">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <Badge variant="secondary" className="bg-blue-50 text-blue-800 border-blue-100 mb-4">Voices of Change</Badge>
@@ -314,7 +336,7 @@ function Testimonials() {
         </div>
         <div className="grid md:grid-cols-3 gap-6">
           {TESTIMONIALS.map((t, i) => (
-            <Card key={i} className="border-0 shadow-md hover:shadow-xl transition bg-white">
+            <Card key={i} className="border-0 shadow-md hover:shadow-lg transition bg-white">
               <CardContent className="p-7">
                 <Quote className="w-8 h-8 text-amber-500 mb-4" />
                 <p className="text-slate-700 italic leading-relaxed mb-6">&ldquo;{t.quote}&rdquo;</p>
@@ -334,9 +356,9 @@ function Testimonials() {
   )
 }
 
-// ───────────────────────────────────────────────────────────────────────────
-//  VOLUNTEER
-// ───────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
+//  VOLUNTEER (kept on home, no contact form)
+// ────────────────────────────────────────────────────────────
 function VolunteerSection() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', city: '', interest: 'education', message: '' })
   const [loading, setLoading] = useState(false)
@@ -355,12 +377,12 @@ function VolunteerSection() {
   }
 
   return (
-    <section id="volunteer" className="py-20 lg:py-28 bg-slate-50">
+    <section id="volunteer" className="py-24 lg:py-28 bg-white">
       <div className="container grid lg:grid-cols-2 gap-12 items-center">
         <div>
-          <Badge variant="secondary" className="bg-amber-50 text-amber-800 border-amber-100 mb-4">Join the Movement</Badge>
+          <Badge variant="secondary" className="bg-amber-50 text-amber-800 border-amber-100 mb-4">Volunteer With Us</Badge>
           <h2 className="font-[Playfair_Display] text-4xl lg:text-5xl font-bold text-slate-900 mb-5 leading-tight">Give your time. <br /><span className="text-blue-800">Change a life.</span></h2>
-          <p className="text-slate-600 text-lg mb-6 leading-relaxed">Whether it&apos;s teaching for an hour a week, joining a relief deployment or helping us plant trees on weekends — we have a place for every heart.</p>
+          <p className="text-slate-600 text-lg mb-7 leading-relaxed">Whether it&apos;s teaching for an hour a week, joining a relief deployment or helping plant trees on weekends — we have a place for every heart.</p>
           <ul className="space-y-3">
             {['Field volunteering — relief camps, drives & rallies', 'Online volunteering — design, content, social media', 'Corporate / college partnerships welcome'].map((l, i) => (
               <li key={i} className="flex items-start gap-3 text-slate-700"><CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" />{l}</li>
@@ -374,7 +396,7 @@ function VolunteerSection() {
               <div className="text-center py-12">
                 <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 flex items-center justify-center mb-4"><CheckCircle2 className="w-9 h-9 text-emerald-600" /></div>
                 <h3 className="text-2xl font-bold text-slate-900 mb-2">Welcome aboard!</h3>
-                <p className="text-slate-600">Thank you for stepping forward. Our volunteer coordinator will reach out within 48 hours.</p>
+                <p className="text-slate-600">Our volunteer coordinator will reach out within 48 hours.</p>
               </div>
             ) : (
               <form onSubmit={submit} className="space-y-4">
@@ -388,9 +410,9 @@ function VolunteerSection() {
                 </div>
                 <div>
                   <Label>Area of Interest</Label>
-                  <div className="grid grid-cols-3 gap-2 mt-1.5">
-                    {['education', 'disaster-relief', 'environment'].map(k => (
-                      <button type="button" key={k} onClick={() => setForm({ ...form, interest: k })} className={`text-xs sm:text-sm px-2 py-2.5 rounded-lg border transition font-medium capitalize ${form.interest === k ? 'bg-blue-800 text-white border-blue-800' : 'bg-white text-slate-700 border-slate-200 hover:border-blue-300'}`}>{k.replace('-', ' ')}</button>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1.5">
+                    {['education', 'disaster-relief', 'environment', 'healthcare'].map(k => (
+                      <button type="button" key={k} onClick={() => setForm({ ...form, interest: k })} className={`text-xs px-2 py-2.5 rounded-lg border transition font-medium capitalize ${form.interest === k ? 'bg-blue-800 text-white border-blue-800' : 'bg-white text-slate-700 border-slate-200 hover:border-blue-300'}`}>{k.replace('-', ' ')}</button>
                     ))}
                   </div>
                 </div>
@@ -407,71 +429,7 @@ function VolunteerSection() {
   )
 }
 
-// ───────────────────────────────────────────────────────────────────────────
-//  CONTACT
-// ───────────────────────────────────────────────────────────────────────────
-function Contact() {
-  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
-  const [loading, setLoading] = useState(false)
-
-  const submit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    try {
-      const r = await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
-      const d = await r.json()
-      if (!r.ok) throw new Error(d.error)
-      toast.success('Message sent — we will respond within 24 hours.')
-      setForm({ name: '', email: '', subject: '', message: '' })
-    } catch (err) { toast.error(err.message || 'Something went wrong') } finally { setLoading(false) }
-  }
-
-  return (
-    <section id="contact" className="py-20 lg:py-28 bg-white">
-      <div className="container grid lg:grid-cols-5 gap-10">
-        <div className="lg:col-span-2">
-          <Badge variant="secondary" className="bg-blue-50 text-blue-800 border-blue-100 mb-4">Get in Touch</Badge>
-          <h2 className="font-[Playfair_Display] text-4xl lg:text-5xl font-bold text-slate-900 mb-4 leading-tight">Let&apos;s talk seva.</h2>
-          <p className="text-slate-600 mb-8 leading-relaxed">For partnerships, CSR, press, or to plan a visit to our headquarters — write to us anytime.</p>
-          <div className="space-y-5">
-            <div className="flex items-start gap-4">
-              <div className="w-11 h-11 rounded-lg gradient-trust flex items-center justify-center shrink-0"><MapPin className="w-5 h-5 text-white" /></div>
-              <div><div className="font-semibold text-slate-900">Headquarters</div><div className="text-slate-600 text-sm">Trust Bhavan, Grand Road, Puri,<br />Odisha 752001, India</div></div>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="w-11 h-11 rounded-lg gradient-trust flex items-center justify-center shrink-0"><Phone className="w-5 h-5 text-white" /></div>
-              <div><div className="font-semibold text-slate-900">Phone</div><div className="text-slate-600 text-sm">+91 99999 88888 <br /><span className="text-xs text-slate-500">Mon–Sat, 10 AM – 6 PM IST</span></div></div>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="w-11 h-11 rounded-lg gradient-trust flex items-center justify-center shrink-0"><Mail className="w-5 h-5 text-white" /></div>
-              <div><div className="font-semibold text-slate-900">Email</div><div className="text-slate-600 text-sm">contact@maakarmadevitrust.org<br />donations@maakarmadevitrust.org</div></div>
-            </div>
-          </div>
-        </div>
-
-        <Card className="border-0 shadow-xl lg:col-span-3">
-          <CardContent className="p-7">
-            <form onSubmit={submit} className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div><Label htmlFor="cname">Name *</Label><Input id="cname" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="mt-1.5" /></div>
-                <div><Label htmlFor="cemail">Email *</Label><Input id="cemail" type="email" required value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="mt-1.5" /></div>
-              </div>
-              <div><Label htmlFor="csub">Subject</Label><Input id="csub" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} className="mt-1.5" /></div>
-              <div><Label htmlFor="cmsg">Message *</Label><Textarea id="cmsg" required rows={5} value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} className="mt-1.5" /></div>
-              <Button type="submit" disabled={loading} className="gradient-trust text-white h-11 font-semibold w-full sm:w-auto px-8">
-                {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending…</> : <>Send Message <ArrowRight className="w-4 h-4 ml-2" /></>}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </section>
-  )
-}
-
-// ───────────────────────────────────────────────────────────────────────────
-//  ROOT
-// ───────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
 function App() {
   return (
     <SiteShell solidHeader={false}>
@@ -479,11 +437,11 @@ function App() {
       <About />
       <Programs />
       <Impact />
+      <Transparency />
       <Gallery />
       <BlogTeaser />
       <Testimonials />
       <VolunteerSection />
-      <Contact />
     </SiteShell>
   )
 }

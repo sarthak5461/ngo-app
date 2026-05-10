@@ -224,6 +224,96 @@ async function handleRoute(request, { params }) {
       return handleCORS(NextResponse.json(cleaned))
     }
 
+    // ── MEMBERSHIP ─────────────────────────────────────────────────
+    if (route === '/members/apply' && method === 'POST') {
+      const body = await request.json()
+      const amount = parseInt(body.amount, 10)
+      if (!body.name || !body.email || !body.mobile || !body.address) {
+        return handleCORS(NextResponse.json({ error: 'Required fields missing' }, { status: 400 }))
+      }
+      if (!/^\d{10}$/.test(body.mobile)) {
+        return handleCORS(NextResponse.json({ error: 'Invalid mobile number' }, { status: 400 }))
+      }
+      if (!amount || amount < 500) {
+        return handleCORS(NextResponse.json({ error: 'Minimum support contribution is ₹500' }, { status: 400 }))
+      }
+      const orderId = `order_${uuidv4().replace(/-/g, '').slice(0, 20)}`
+      const id = uuidv4()
+      const memberDoc = {
+        id, memberId: null,
+        name: body.name, mobile: body.mobile, email: body.email,
+        address: body.address, occupation: body.occupation || 'Other',
+        aadhaarLast4: (body.aadhaarLast4 || '').slice(-4),
+        photo: body.photo || null, reason: body.reason || '',
+        amount, orderId, paymentId: null,
+        status: 'pending_payment',
+        validFrom: null, validUntil: null, receiptNumber: null,
+        kind: 'membership',
+        createdAt: new Date(), updatedAt: new Date(),
+      }
+      await db.collection('members').insertOne(memberDoc)
+      await db.collection('member_orders').insertOne({
+        id: uuidv4(), orderId, memberId: id, amount, status: 'created', createdAt: new Date(),
+      })
+      return handleCORS(NextResponse.json({
+        id, orderId, amount, currency: 'INR', keyId: MOCK_RAZORPAY_KEY_ID, mock: true,
+      }))
+    }
+
+    if (route === '/members/mock-pay' && method === 'POST') {
+      const body = await request.json()
+      const order = await db.collection('member_orders').findOne({ orderId: body.orderId })
+      if (!order) return handleCORS(NextResponse.json({ error: 'Order not found' }, { status: 404 }))
+      const paymentId = `pay_${uuidv4().replace(/-/g, '').slice(0, 20)}`
+      const signature = signRazorpay(body.orderId, paymentId)
+      return handleCORS(NextResponse.json({ paymentId, signature, orderId: body.orderId }))
+    }
+
+    if (route === '/members/complete' && method === 'POST') {
+      const body = await request.json()
+      const { id, orderId, paymentId, signature } = body
+      if (!id || !orderId || !paymentId || !signature) {
+        return handleCORS(NextResponse.json({ error: 'Missing payment fields' }, { status: 400 }))
+      }
+      const member = await db.collection('members').findOne({ id })
+      if (!member) return handleCORS(NextResponse.json({ error: 'Member not found' }, { status: 404 }))
+      if (member.orderId !== orderId) return handleCORS(NextResponse.json({ error: 'Order mismatch' }, { status: 400 }))
+
+      const valid = verifyRazorpaySignature(orderId, paymentId, signature)
+      if (!valid) {
+        await db.collection('members').updateOne({ id }, { $set: { status: 'payment_failed', updatedAt: new Date() } })
+        return handleCORS(NextResponse.json({ error: 'Payment signature verification failed' }, { status: 400 }))
+      }
+
+      const num = Math.floor(100000 + Math.random() * 900000)
+      const printedId = `MKDS-MEM-${num}`
+      const validFrom = new Date()
+      const validUntil = new Date(validFrom)
+      validUntil.setFullYear(validUntil.getFullYear() + 1)
+      const receiptNumber = `MKDS/M/${validFrom.getFullYear()}/${num}`
+
+      await db.collection('members').updateOne({ id }, {
+        $set: {
+          memberId: printedId, paymentId, status: 'active',
+          validFrom, validUntil, receiptNumber, updatedAt: new Date(),
+        },
+      })
+      await db.collection('member_orders').updateOne({ orderId }, { $set: { status: 'paid', paidAt: new Date() } })
+
+      const final = await db.collection('members').findOne({ id })
+      const { _id, ...clean } = final
+      return handleCORS(NextResponse.json({ success: true, member: clean }))
+    }
+
+    if (route.startsWith('/members/') && !route.endsWith('/apply') && !route.endsWith('/mock-pay') && !route.endsWith('/complete') && method === 'GET') {
+      const id = route.replace('/members/', '')
+      const m = await db.collection('members').findOne({ id })
+      if (!m) return handleCORS(NextResponse.json({ error: 'Not found' }, { status: 404 }))
+      const { _id, ...clean } = m
+      return handleCORS(NextResponse.json(clean))
+    }
+
+
     // ── VOLUNTEER SIGNUP ──────────────────────────────────
     if (route === '/volunteer' && method === 'POST') {
       const body = await request.json()

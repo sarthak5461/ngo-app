@@ -1,13 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
 import { Heart, HandHeart } from 'lucide-react'
 import { NGO_FULL_NAME, NGO_SHORT } from '@/lib/content'
-import { useDonate } from './donate-provider'
 
 export default function SiteFooter() {
-  const { open: openDonate } = useDonate()
   return (
     <footer className="bg-slate-950 text-white pt-16 pb-8">
       <div className="container grid md:grid-cols-4 gap-10 mb-12">
@@ -19,12 +16,16 @@ export default function SiteFooter() {
               <div className="text-xs text-slate-400">Sangh Trust • since 2008</div>
             </div>
           </div>
-          <p className="text-slate-400 text-sm leading-relaxed mb-4 max-w-md">
-            {NGO_FULL_NAME} is a registered non-profit working across Education, Disaster Relief and Environment. 12A &amp; 80G certified.
+          <p className="text-slate-400 text-sm leading-relaxed mb-5 max-w-md">
+            {NGO_FULL_NAME} is a registered non-profit working across Education, Disaster Relief, Environment and Healthcare. 12A &amp; 80G certified.
           </p>
-          <Button onClick={() => openDonate()} className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold">
-            <Heart className="w-4 h-4 mr-2 fill-current" /> Donate Now
-          </Button>
+          <div className="flex gap-3 text-sm text-slate-400">
+            <Link href="/membership" className="hover:text-amber-300 underline-offset-4 hover:underline">Become a Member</Link>
+            <span className="text-slate-700">•</span>
+            <Link href="/#volunteer" className="hover:text-amber-300 underline-offset-4 hover:underline">Volunteer</Link>
+            <span className="text-slate-700">•</span>
+            <Link href="/csr" className="hover:text-amber-300 underline-offset-4 hover:underline">CSR</Link>
+          </div>
         </div>
 
         <div>
@@ -32,20 +33,22 @@ export default function SiteFooter() {
           <ul className="space-y-2 text-sm text-slate-400">
             <li><Link href="/about" className="hover:text-amber-300">About Us</Link></li>
             <li><Link href="/programs" className="hover:text-amber-300">Programs</Link></li>
-            <li><Link href="/blog" className="hover:text-amber-300">Blog</Link></li>
+            <li><Link href="/csr" className="hover:text-amber-300">CSR Activities</Link></li>
+            <li><Link href="/membership" className="hover:text-amber-300">Become a Member</Link></li>
+            <li><Link href="/blog" className="hover:text-amber-300">Blog &amp; News</Link></li>
             <li><Link href="/#impact" className="hover:text-amber-300">Our Impact</Link></li>
             <li><Link href="/#volunteer" className="hover:text-amber-300">Volunteer</Link></li>
-            <li><Link href="/#contact" className="hover:text-amber-300">Contact</Link></li>
           </ul>
         </div>
 
         <div>
-          <div className="font-semibold mb-4">Legal</div>
+          <div className="font-semibold mb-4">Legal &amp; Compliance</div>
           <ul className="space-y-2 text-sm text-slate-400">
             <li>Trust Reg: 432/2008</li>
             <li>PAN: AAATM0000K</li>
             <li>12A: AAATM0000K/12A</li>
             <li>80G: AAATM0000K/80G</li>
+            <li>FCRA: pending</li>
           </ul>
         </div>
       </div>

@@ -237,6 +237,80 @@ backend:
           agent: "testing"
           comment: "✅ PASSED. POST /api/contact correctly validates required fields (name, email, message), returns 400 'All fields are required' when missing. Happy path returns 200 with success:true and contact document."
 
+  - task: "POST /api/members/apply — start membership application + create payment order"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            New endpoint for membership feature.
+            Validates required fields (name, mobile-10digit, email, address) and amount >= 500.
+            Creates a member doc with status='pending_payment' and a member_orders entry.
+            Returns { id, orderId, amount, currency, keyId, mock:true }.
+        - working: true
+          agent: "testing"
+          comment: "✅ PASSED. POST /api/members/apply correctly validates all required fields (name, mobile, email, address), rejects missing fields with 400 'Required fields missing', validates amount >= 500 (rejects < 500 with 400 'Minimum support contribution is ₹500'), validates mobile number format (10 digits only, rejects non-numeric and short numbers with 400 'Invalid mobile number'). Happy path returns 200 with id (UUID), orderId (starts with 'order_'), amount:500, currency:'INR', keyId, mock:true."
+
+  - task: "POST /api/members/mock-pay — mock Razorpay for membership"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Looks up member_orders by orderId, generates paymentId + HMAC SHA-256 signature with mock secret. Returns {orderId, paymentId, signature}."
+        - working: true
+          agent: "testing"
+          comment: "✅ PASSED. POST /api/members/mock-pay correctly looks up member_orders by orderId, generates paymentId starting with 'pay_', computes HMAC SHA-256 signature (64 hex chars), returns {orderId, paymentId, signature}. Returns 404 for non-existent orders."
+
+  - task: "POST /api/members/complete — verify signature, activate member with 1-year validity"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            CRITICAL endpoint. Recomputes HMAC SHA-256 server-side and uses crypto.timingSafeEqual.
+            On valid signature: issues memberId (MKDS-MEM-NNNNNN), sets validFrom=now, validUntil=+1year, status='active', generates receiptNumber MKDS/M/YYYY/NNNNNN.
+            On invalid: marks status='payment_failed' and returns 400.
+            Test scenarios:
+              1. Happy path (apply → mock-pay → complete) → 200 with active member.
+              2. Tampered signature → 400 + member status='payment_failed'.
+              3. Missing fields → 400.
+              4. Unknown member id → 404.
+              5. orderId mismatch → 400 'Order mismatch'.
+        - working: true
+          agent: "testing"
+          comment: "✅ PASSED ALL SCENARIOS. 🔴 CRITICAL TEST CONFIRMED: Signature verification using HMAC SHA-256 + crypto.timingSafeEqual works perfectly for membership. (1) Valid signature: returns 200 with success:true, member with memberId matching /^MKDS-MEM-\\d{6}$/, receiptNumber matching /^MKDS\\/M\\/\\d{4}\\/\\d+$/, status='active', validFrom and validUntil exactly 1 year apart (365 days). (2) Tampered signature (replaced with '0'*64): correctly REJECTS with 400 'Payment signature verification failed' AND updates member status to 'payment_failed' (verified via GET /api/members/:id). (3) Missing signature: returns 400. (4) Unknown member id: returns 404. (5) Mismatched orderId: returns 400 'Order mismatch'. Security verification is production-ready."
+
+  - task: "GET /api/members/:id — fetch member card (for re-print)"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Returns member doc for the given internal id. 404 if not found."
+        - working: true
+          agent: "testing"
+          comment: "✅ PASSED. GET /api/members/:id correctly returns member document with all required fields (id, memberId, name, mobile, email, address, status, validFrom, validUntil, receiptNumber) for valid ID (200), returns 404 for non-existent ID."
+
+
 frontend:
   - task: "NGO public homepage UI"
     implemented: true
@@ -316,3 +390,34 @@ agent_communication:
         Test file: /app/backend_test.py (can be re-run anytime)
         
         NO ISSUES FOUND. Backend is production-ready for Phase 1 MVP.
+    - agent: "testing"
+      message: |
+        ✅ MEMBERSHIP BACKEND TESTING COMPLETE - ALL TESTS PASSED (16/16 total)
+        
+        Comprehensive membership backend testing completed successfully. All new membership endpoints working correctly:
+        
+        🔴 CRITICAL TEST CONFIRMED FOR MEMBERSHIP:
+        - HMAC SHA-256 signature verification is PRODUCTION-READY for membership flow
+        - Valid signatures are accepted correctly and member is activated with 1-year validity
+        - Tampered signatures are properly REJECTED with 400 error
+        - Member status correctly updated to 'payment_failed' when signature is invalid
+        - Uses crypto.timingSafeEqual for constant-time comparison (prevents timing attacks)
+        
+        ✅ All Membership Endpoints Tested:
+        1. POST /api/members/apply - All validations working (required fields, amount >= 500, mobile format)
+        2. POST /api/members/mock-pay - Generates valid HMAC signatures for membership
+        3. POST /api/members/complete - Signature verification working perfectly (CRITICAL)
+           - Issues memberId in format MKDS-MEM-NNNNNN
+           - Generates receiptNumber in format MKDS/M/YYYY/NNNNNN
+           - Sets validFrom and validUntil exactly 1 year apart (365 days)
+           - All edge cases handled (missing signature, unknown id, mismatched orderId)
+        4. GET /api/members/:id - Returns all required fields, 404 for invalid
+        
+        ✅ Regression Tests Passed:
+        - GET /api/stats still working
+        - POST /api/donations/create-order still working
+        - All donation endpoints remain functional
+        
+        Test file: /app/backend_test.py (updated with membership tests, can be re-run anytime)
+        
+        NO ISSUES FOUND. Membership backend is production-ready.

@@ -1,11 +1,10 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import SiteShell from '@/components/site/site-shell'
-import DonateButton from '@/app/programs/[slug]/donate-button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Calendar, Clock, ArrowLeft, ArrowRight, Quote as QuoteIcon, User } from 'lucide-react'
+import { Calendar, Clock, ArrowLeft, ArrowRight, Quote as QuoteIcon, User, HandHeart } from 'lucide-react'
 import { BLOG_POSTS, BLOG_BY_SLUG, CATEGORY_LABEL, CATEGORY_COLOR } from '@/lib/content'
 
 export function generateStaticParams() {
@@ -88,12 +87,15 @@ export default function BlogPostPage({ params }) {
             </CardContent>
           </Card>
 
-          {/* Donate CTA mid-article */}
+          {/* Membership CTA mid-article (cause-driven, non-aggressive) */}
           <Card className="border-0 shadow-xl mt-10 gradient-trust text-white">
             <CardContent className="p-8 text-center">
-              <h3 className="font-[Playfair_Display] text-2xl font-bold mb-2">Stories like this run on donations.</h3>
-              <p className="text-white/85 mb-5">Your contribution funds the field work behind every post.</p>
-              <DonateButton cause={post.category === 'general' ? 'general' : post.category} label="Donate now" />
+              <HandHeart className="w-10 h-10 text-amber-300 mx-auto mb-3" />
+              <h3 className="font-[Playfair_Display] text-2xl font-bold mb-2">Stand with the Trust.</h3>
+              <p className="text-white/85 mb-5 max-w-md mx-auto">Stories like this run on the trust of our members. Become one — a simple application and a token contribution.</p>
+              <Button asChild size="lg" className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold h-12 px-7 shadow-xl shadow-amber-500/30">
+                <Link href="/membership"><HandHeart className="w-4 h-4 mr-2" /> Become a Member</Link>
+              </Button>
             </CardContent>
           </Card>
         </article>
