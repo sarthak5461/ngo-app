@@ -2,6 +2,7 @@ import { MongoClient } from 'mongodb'
 import { v4 as uuidv4 } from 'uuid'
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
+import { handleAdminRoute } from '@/lib/admin/handlers'
 
 // ────────────────────────────────────────────────────────────
 //  Maa Karma Devi Sangh Trust  •  API Routes
@@ -89,6 +90,12 @@ async function handleRoute(request, { params }) {
 
   try {
     const db = await connectToMongo()
+
+    // ── Delegate /admin/* to admin handlers (auth checked inside) ──
+    if (route.startsWith('/admin/') || route === '/admin') {
+      const res = await handleAdminRoute(request, route, method)
+      return handleCORS(res)
+    }
 
     // ── Health
     if ((route === '/' || route === '/root') && method === 'GET') {

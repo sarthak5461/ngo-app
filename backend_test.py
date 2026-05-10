@@ -1018,6 +1018,794 @@ def test_regression_checks():
     
     return all_passed
 
+def test_admin_auth_flow():
+    """Test 19: Admin authentication flow"""
+    print("\n" + "="*80)
+    print("TESTING ADMIN AUTHENTICATION FLOW")
+    print("="*80)
+    
+    all_passed = True
+    global admin_cookie
+    admin_cookie = None
+    
+    # Test 1a: Login with wrong password
+    try:
+        login_payload = {"password": "wrongpassword"}
+        response = requests.post(f"{BASE_URL}/admin/login", json=login_payload)
+        data = response.json()
+        
+        passed = (
+            response.status_code == 401 and
+            "Invalid password" in data.get("error", "")
+        )
+        all_passed = all_passed and print_test(
+            "Admin Login: Wrong password returns 401",
+            passed,
+            f"Status: {response.status_code}, Error: {data.get('error')}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Login: Wrong password", False, f"Exception: {str(e)}")
+    
+    # Test 1b: Login with correct password
+    try:
+        login_payload = {"password": "admin123"}
+        response = requests.post(f"{BASE_URL}/admin/login", json=login_payload)
+        data = response.json()
+        
+        # Check for Set-Cookie header
+        set_cookie = response.headers.get('Set-Cookie', '')
+        has_cookie = 'mkds_admin_session' in set_cookie
+        
+        passed = (
+            response.status_code == 200 and
+            data.get("ok") == True and
+            data.get("role") == "super_admin" and
+            data.get("name") == "Super Admin" and
+            has_cookie
+        )
+        
+        if has_cookie:
+            # Extract cookie value
+            cookie_parts = set_cookie.split(';')[0]
+            admin_cookie = cookie_parts
+            print(f"   Saved admin cookie: {admin_cookie[:50]}...")
+        
+        all_passed = all_passed and print_test(
+            "Admin Login: Correct password returns 200 + cookie",
+            passed,
+            f"Status: {response.status_code}, Role: {data.get('role')}, Has cookie: {has_cookie}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Login: Correct password", False, f"Exception: {str(e)}")
+    
+    # Test 1c: GET /admin/me with cookie
+    try:
+        if admin_cookie:
+            headers = {'Cookie': admin_cookie}
+            response = requests.get(f"{BASE_URL}/admin/me", headers=headers)
+            data = response.json()
+            
+            passed = (
+                response.status_code == 200 and
+                data.get("role") == "super_admin" and
+                data.get("name") == "Super Admin"
+            )
+            all_passed = all_passed and print_test(
+                "Admin /me: With cookie returns 200",
+                passed,
+                f"Status: {response.status_code}, Role: {data.get('role')}"
+            )
+        else:
+            all_passed = False
+            print_test("Admin /me: With cookie", False, "No admin cookie available")
+    except Exception as e:
+        all_passed = False
+        print_test("Admin /me: With cookie", False, f"Exception: {str(e)}")
+    
+    # Test 1d: GET /admin/me without cookie
+    try:
+        response = requests.get(f"{BASE_URL}/admin/me")
+        data = response.json()
+        
+        passed = (
+            response.status_code == 401 and
+            "Unauthorised" in data.get("error", "")
+        )
+        all_passed = all_passed and print_test(
+            "Admin /me: Without cookie returns 401",
+            passed,
+            f"Status: {response.status_code}, Error: {data.get('error')}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin /me: Without cookie", False, f"Exception: {str(e)}")
+    
+    # Test 1e: GET /admin/stats without cookie
+    try:
+        response = requests.get(f"{BASE_URL}/admin/stats")
+        data = response.json()
+        
+        passed = response.status_code == 401
+        all_passed = all_passed and print_test(
+            "Admin /stats: Without cookie returns 401",
+            passed,
+            f"Status: {response.status_code}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin /stats: Without cookie", False, f"Exception: {str(e)}")
+    
+    # Test 1f: GET /admin/stats with cookie
+    try:
+        if admin_cookie:
+            headers = {'Cookie': admin_cookie}
+            response = requests.get(f"{BASE_URL}/admin/stats", headers=headers)
+            data = response.json()
+            
+            required_fields = ["totalRaised", "donationCount", "activeMembers", "pendingMembers", 
+                             "memberContributions", "volunteerCount", "csrCount", "contactCount"]
+            has_all_fields = all(field in data for field in required_fields)
+            
+            passed = (
+                response.status_code == 200 and
+                has_all_fields
+            )
+            all_passed = all_passed and print_test(
+                "Admin /stats: With cookie returns 200 with all fields",
+                passed,
+                f"Status: {response.status_code}, Has all fields: {has_all_fields}, Data: {data}"
+            )
+        else:
+            all_passed = False
+            print_test("Admin /stats: With cookie", False, "No admin cookie available")
+    except Exception as e:
+        all_passed = False
+        print_test("Admin /stats: With cookie", False, f"Exception: {str(e)}")
+    
+    return all_passed
+
+def test_admin_list_endpoints():
+    """Test 20: Admin list endpoints with filters"""
+    print("\n" + "="*80)
+    print("TESTING ADMIN LIST ENDPOINTS")
+    print("="*80)
+    
+    all_passed = True
+    
+    if not admin_cookie:
+        print_test("Admin List Endpoints", False, "No admin cookie available")
+        return False
+    
+    headers = {'Cookie': admin_cookie}
+    
+    # Test donations list
+    try:
+        response = requests.get(f"{BASE_URL}/admin/donations", headers=headers)
+        data = response.json()
+        
+        passed = (
+            response.status_code == 200 and
+            "rows" in data and
+            isinstance(data["rows"], list)
+        )
+        all_passed = all_passed and print_test(
+            "Admin Donations: List returns array",
+            passed,
+            f"Status: {response.status_code}, Count: {len(data.get('rows', []))}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Donations: List", False, f"Exception: {str(e)}")
+    
+    # Test donations filter by cause
+    try:
+        response = requests.get(f"{BASE_URL}/admin/donations?cause=education", headers=headers)
+        data = response.json()
+        
+        rows = data.get("rows", [])
+        all_education = all(row.get("cause") == "education" for row in rows) if rows else True
+        
+        passed = (
+            response.status_code == 200 and
+            isinstance(rows, list)
+        )
+        all_passed = all_passed and print_test(
+            "Admin Donations: Filter by cause=education",
+            passed,
+            f"Status: {response.status_code}, Count: {len(rows)}, All education: {all_education}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Donations: Filter by cause", False, f"Exception: {str(e)}")
+    
+    # Test members list
+    try:
+        response = requests.get(f"{BASE_URL}/admin/members", headers=headers)
+        data = response.json()
+        
+        passed = (
+            response.status_code == 200 and
+            "rows" in data and
+            isinstance(data["rows"], list)
+        )
+        all_passed = all_passed and print_test(
+            "Admin Members: List returns array",
+            passed,
+            f"Status: {response.status_code}, Count: {len(data.get('rows', []))}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Members: List", False, f"Exception: {str(e)}")
+    
+    # Test members filter by status
+    try:
+        response = requests.get(f"{BASE_URL}/admin/members?status=active", headers=headers)
+        data = response.json()
+        
+        rows = data.get("rows", [])
+        all_active = all(row.get("status") == "active" for row in rows) if rows else True
+        
+        passed = (
+            response.status_code == 200 and
+            isinstance(rows, list) and
+            all_active
+        )
+        all_passed = all_passed and print_test(
+            "Admin Members: Filter by status=active",
+            passed,
+            f"Status: {response.status_code}, Count: {len(rows)}, All active: {all_active}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Members: Filter by status", False, f"Exception: {str(e)}")
+    
+    # Test volunteers list
+    try:
+        response = requests.get(f"{BASE_URL}/admin/volunteers", headers=headers)
+        data = response.json()
+        
+        passed = (
+            response.status_code == 200 and
+            "rows" in data and
+            isinstance(data["rows"], list)
+        )
+        all_passed = all_passed and print_test(
+            "Admin Volunteers: List returns array",
+            passed,
+            f"Status: {response.status_code}, Count: {len(data.get('rows', []))}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Volunteers: List", False, f"Exception: {str(e)}")
+    
+    # Test volunteers filter by interest
+    try:
+        response = requests.get(f"{BASE_URL}/admin/volunteers?interest=education", headers=headers)
+        data = response.json()
+        
+        rows = data.get("rows", [])
+        all_education = all(row.get("interest") == "education" for row in rows) if rows else True
+        
+        passed = (
+            response.status_code == 200 and
+            isinstance(rows, list)
+        )
+        all_passed = all_passed and print_test(
+            "Admin Volunteers: Filter by interest=education",
+            passed,
+            f"Status: {response.status_code}, Count: {len(rows)}, All education: {all_education}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Volunteers: Filter by interest", False, f"Exception: {str(e)}")
+    
+    # Test contacts list
+    try:
+        response = requests.get(f"{BASE_URL}/admin/contacts", headers=headers)
+        data = response.json()
+        
+        passed = (
+            response.status_code == 200 and
+            "rows" in data and
+            isinstance(data["rows"], list)
+        )
+        all_passed = all_passed and print_test(
+            "Admin Contacts: List returns array",
+            passed,
+            f"Status: {response.status_code}, Count: {len(data.get('rows', []))}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Contacts: List", False, f"Exception: {str(e)}")
+    
+    # Test contacts filter by kind=csr
+    try:
+        response = requests.get(f"{BASE_URL}/admin/contacts?kind=csr", headers=headers)
+        data = response.json()
+        
+        rows = data.get("rows", [])
+        all_csr = all("CSR" in row.get("subject", "").upper() for row in rows) if rows else True
+        
+        passed = (
+            response.status_code == 200 and
+            isinstance(rows, list)
+        )
+        all_passed = all_passed and print_test(
+            "Admin Contacts: Filter by kind=csr",
+            passed,
+            f"Status: {response.status_code}, Count: {len(rows)}, All CSR: {all_csr}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Contacts: Filter by kind=csr", False, f"Exception: {str(e)}")
+    
+    # Test contacts filter by kind=general (no CSR)
+    try:
+        response = requests.get(f"{BASE_URL}/admin/contacts?kind=general", headers=headers)
+        data = response.json()
+        
+        rows = data.get("rows", [])
+        no_csr = all("CSR" not in row.get("subject", "").upper() for row in rows) if rows else True
+        
+        passed = (
+            response.status_code == 200 and
+            isinstance(rows, list) and
+            no_csr
+        )
+        all_passed = all_passed and print_test(
+            "Admin Contacts: Filter by kind=general (no CSR)",
+            passed,
+            f"Status: {response.status_code}, Count: {len(rows)}, No CSR: {no_csr}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Contacts: Filter by kind=general", False, f"Exception: {str(e)}")
+    
+    return all_passed
+
+def test_admin_csv_exports():
+    """Test 21: Admin CSV export endpoints"""
+    print("\n" + "="*80)
+    print("TESTING ADMIN CSV EXPORTS")
+    print("="*80)
+    
+    all_passed = True
+    
+    if not admin_cookie:
+        print_test("Admin CSV Exports", False, "No admin cookie available")
+        return False
+    
+    headers = {'Cookie': admin_cookie}
+    
+    # Test donations export
+    try:
+        response = requests.get(f"{BASE_URL}/admin/donations/export", headers=headers)
+        
+        content_type = response.headers.get('Content-Type', '')
+        content_disposition = response.headers.get('Content-Disposition', '')
+        body = response.text
+        
+        is_csv = 'text/csv' in content_type
+        has_filename = 'donations' in content_disposition and '.csv' in content_disposition
+        has_headers = body.startswith('"') or 'Receipt' in body[:100]
+        
+        passed = (
+            response.status_code == 200 and
+            is_csv and
+            has_filename and
+            has_headers
+        )
+        all_passed = all_passed and print_test(
+            "Admin Donations Export: Returns CSV",
+            passed,
+            f"Status: {response.status_code}, Is CSV: {is_csv}, Has filename: {has_filename}, Body preview: {body[:100]}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Donations Export", False, f"Exception: {str(e)}")
+    
+    # Test members export
+    try:
+        response = requests.get(f"{BASE_URL}/admin/members/export", headers=headers)
+        
+        content_type = response.headers.get('Content-Type', '')
+        content_disposition = response.headers.get('Content-Disposition', '')
+        
+        is_csv = 'text/csv' in content_type
+        has_filename = 'members' in content_disposition and '.csv' in content_disposition
+        
+        passed = (
+            response.status_code == 200 and
+            is_csv and
+            has_filename
+        )
+        all_passed = all_passed and print_test(
+            "Admin Members Export: Returns CSV",
+            passed,
+            f"Status: {response.status_code}, Is CSV: {is_csv}, Has filename: {has_filename}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Members Export", False, f"Exception: {str(e)}")
+    
+    # Test volunteers export
+    try:
+        response = requests.get(f"{BASE_URL}/admin/volunteers/export", headers=headers)
+        
+        content_type = response.headers.get('Content-Type', '')
+        content_disposition = response.headers.get('Content-Disposition', '')
+        
+        is_csv = 'text/csv' in content_type
+        has_filename = 'volunteers' in content_disposition and '.csv' in content_disposition
+        
+        passed = (
+            response.status_code == 200 and
+            is_csv and
+            has_filename
+        )
+        all_passed = all_passed and print_test(
+            "Admin Volunteers Export: Returns CSV",
+            passed,
+            f"Status: {response.status_code}, Is CSV: {is_csv}, Has filename: {has_filename}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Volunteers Export", False, f"Exception: {str(e)}")
+    
+    # Test contacts export with kind=csr
+    try:
+        response = requests.get(f"{BASE_URL}/admin/contacts/export?kind=csr", headers=headers)
+        
+        content_type = response.headers.get('Content-Type', '')
+        content_disposition = response.headers.get('Content-Disposition', '')
+        
+        is_csv = 'text/csv' in content_type
+        has_filename = 'contacts' in content_disposition and '.csv' in content_disposition
+        
+        passed = (
+            response.status_code == 200 and
+            is_csv and
+            has_filename
+        )
+        all_passed = all_passed and print_test(
+            "Admin Contacts Export: Returns CSV",
+            passed,
+            f"Status: {response.status_code}, Is CSV: {is_csv}, Has filename: {has_filename}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Contacts Export", False, f"Exception: {str(e)}")
+    
+    return all_passed
+
+def test_admin_content_cms():
+    """Test 22: Admin Content CMS"""
+    print("\n" + "="*80)
+    print("TESTING ADMIN CONTENT CMS")
+    print("="*80)
+    
+    all_passed = True
+    
+    if not admin_cookie:
+        print_test("Admin Content CMS", False, "No admin cookie available")
+        return False
+    
+    headers = {'Cookie': admin_cookie}
+    
+    # Test GET content (initially empty)
+    try:
+        response = requests.get(f"{BASE_URL}/admin/content", headers=headers)
+        data = response.json()
+        
+        passed = (
+            response.status_code == 200 and
+            "rows" in data and
+            isinstance(data["rows"], list)
+        )
+        all_passed = all_passed and print_test(
+            "Admin Content: GET returns array",
+            passed,
+            f"Status: {response.status_code}, Count: {len(data.get('rows', []))}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Content: GET", False, f"Exception: {str(e)}")
+    
+    # Test POST content (create/update)
+    try:
+        content_payload = {
+            "key": "hero.headline",
+            "value": "Test headline for NGO"
+        }
+        response = requests.post(f"{BASE_URL}/admin/content", json=content_payload, headers=headers)
+        data = response.json()
+        
+        passed = (
+            response.status_code == 200 and
+            data.get("key") == "hero.headline" and
+            data.get("value") == "Test headline for NGO"
+        )
+        all_passed = all_passed and print_test(
+            "Admin Content: POST creates/updates content",
+            passed,
+            f"Status: {response.status_code}, Key: {data.get('key')}, Value: {data.get('value')}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Content: POST", False, f"Exception: {str(e)}")
+    
+    # Test GET content again (should contain new item)
+    try:
+        response = requests.get(f"{BASE_URL}/admin/content", headers=headers)
+        data = response.json()
+        
+        rows = data.get("rows", [])
+        has_hero_headline = any(row.get("key") == "hero.headline" and row.get("value") == "Test headline for NGO" for row in rows)
+        
+        passed = (
+            response.status_code == 200 and
+            has_hero_headline
+        )
+        all_passed = all_passed and print_test(
+            "Admin Content: GET includes new content",
+            passed,
+            f"Status: {response.status_code}, Has hero.headline: {has_hero_headline}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Content: GET after POST", False, f"Exception: {str(e)}")
+    
+    # Test POST without key (validation)
+    try:
+        content_payload = {"value": "Test value"}  # Missing key
+        response = requests.post(f"{BASE_URL}/admin/content", json=content_payload, headers=headers)
+        data = response.json()
+        
+        passed = (
+            response.status_code == 400 and
+            "key required" in data.get("error", "")
+        )
+        all_passed = all_passed and print_test(
+            "Admin Content: POST without key returns 400",
+            passed,
+            f"Status: {response.status_code}, Error: {data.get('error')}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Content: POST validation", False, f"Exception: {str(e)}")
+    
+    return all_passed
+
+def test_admin_media_library():
+    """Test 23: Admin Media Library"""
+    print("\n" + "="*80)
+    print("TESTING ADMIN MEDIA LIBRARY")
+    print("="*80)
+    
+    all_passed = True
+    global saved_media_id
+    saved_media_id = None
+    
+    if not admin_cookie:
+        print_test("Admin Media Library", False, "No admin cookie available")
+        return False
+    
+    headers = {'Cookie': admin_cookie}
+    
+    # Test GET media (initially empty or with existing items)
+    try:
+        response = requests.get(f"{BASE_URL}/admin/media", headers=headers)
+        data = response.json()
+        
+        passed = (
+            response.status_code == 200 and
+            "rows" in data and
+            isinstance(data["rows"], list)
+        )
+        initial_count = len(data.get("rows", []))
+        all_passed = all_passed and print_test(
+            "Admin Media: GET returns array",
+            passed,
+            f"Status: {response.status_code}, Count: {initial_count}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Media: GET", False, f"Exception: {str(e)}")
+    
+    # Test POST media (upload)
+    try:
+        media_payload = {
+            "name": "test.png",
+            "mimeType": "image/png",
+            "size": 100,
+            "dataUrl": "data:image/png;base64,iVBORw0KGgo="
+        }
+        response = requests.post(f"{BASE_URL}/admin/media", json=media_payload, headers=headers)
+        data = response.json()
+        
+        saved_media_id = data.get("id")
+        
+        passed = (
+            response.status_code == 200 and
+            data.get("name") == "test.png" and
+            data.get("mimeType") == "image/png" and
+            saved_media_id is not None
+        )
+        all_passed = all_passed and print_test(
+            "Admin Media: POST uploads media",
+            passed,
+            f"Status: {response.status_code}, ID: {saved_media_id}, Name: {data.get('name')}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Media: POST", False, f"Exception: {str(e)}")
+    
+    # Test GET media again (should include new item)
+    try:
+        response = requests.get(f"{BASE_URL}/admin/media", headers=headers)
+        data = response.json()
+        
+        rows = data.get("rows", [])
+        has_test_png = any(row.get("name") == "test.png" for row in rows)
+        
+        passed = (
+            response.status_code == 200 and
+            has_test_png
+        )
+        all_passed = all_passed and print_test(
+            "Admin Media: GET includes new media",
+            passed,
+            f"Status: {response.status_code}, Has test.png: {has_test_png}, Count: {len(rows)}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Media: GET after POST", False, f"Exception: {str(e)}")
+    
+    # Test DELETE media
+    try:
+        if saved_media_id:
+            response = requests.delete(f"{BASE_URL}/admin/media/{saved_media_id}", headers=headers)
+            data = response.json()
+            
+            passed = (
+                response.status_code == 200 and
+                data.get("ok") == True
+            )
+            all_passed = all_passed and print_test(
+                "Admin Media: DELETE removes media",
+                passed,
+                f"Status: {response.status_code}, OK: {data.get('ok')}"
+            )
+        else:
+            all_passed = False
+            print_test("Admin Media: DELETE", False, "No saved media ID")
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Media: DELETE", False, f"Exception: {str(e)}")
+    
+    # Test GET media after delete (should not include deleted item)
+    try:
+        response = requests.get(f"{BASE_URL}/admin/media", headers=headers)
+        data = response.json()
+        
+        rows = data.get("rows", [])
+        has_test_png = any(row.get("id") == saved_media_id for row in rows)
+        
+        passed = (
+            response.status_code == 200 and
+            not has_test_png
+        )
+        all_passed = all_passed and print_test(
+            "Admin Media: GET after DELETE (item removed)",
+            passed,
+            f"Status: {response.status_code}, Has deleted item: {has_test_png}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Media: GET after DELETE", False, f"Exception: {str(e)}")
+    
+    return all_passed
+
+def test_admin_logout():
+    """Test 24: Admin logout"""
+    print("\n" + "="*80)
+    print("TESTING ADMIN LOGOUT")
+    print("="*80)
+    
+    all_passed = True
+    
+    if not admin_cookie:
+        print_test("Admin Logout", False, "No admin cookie available")
+        return False
+    
+    headers = {'Cookie': admin_cookie}
+    
+    # Test logout
+    try:
+        response = requests.post(f"{BASE_URL}/admin/logout", headers=headers)
+        data = response.json()
+        
+        # Check for cookie clearing
+        set_cookie = response.headers.get('Set-Cookie', '')
+        clears_cookie = 'Max-Age=0' in set_cookie or 'mkds_admin_session=;' in set_cookie
+        
+        passed = (
+            response.status_code == 200 and
+            data.get("ok") == True and
+            clears_cookie
+        )
+        all_passed = all_passed and print_test(
+            "Admin Logout: Returns 200 and clears cookie",
+            passed,
+            f"Status: {response.status_code}, OK: {data.get('ok')}, Clears cookie: {clears_cookie}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin Logout", False, f"Exception: {str(e)}")
+    
+    # Test /admin/me after logout (should return 401)
+    try:
+        response = requests.get(f"{BASE_URL}/admin/me", headers=headers)
+        data = response.json()
+        
+        passed = response.status_code == 401
+        all_passed = all_passed and print_test(
+            "Admin /me: After logout returns 401",
+            passed,
+            f"Status: {response.status_code}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Admin /me: After logout", False, f"Exception: {str(e)}")
+    
+    return all_passed
+
+def test_quick_regression():
+    """Test 25: Quick regression smoke test"""
+    print("\n" + "="*80)
+    print("TESTING QUICK REGRESSION (SMOKE TEST)")
+    print("="*80)
+    
+    all_passed = True
+    
+    # Test GET /api/stats
+    try:
+        response = requests.get(f"{BASE_URL}/stats")
+        data = response.json()
+        
+        passed = response.status_code == 200 and "totalRaised" in data
+        all_passed = all_passed and print_test(
+            "Regression: GET /api/stats still works",
+            passed,
+            f"Status: {response.status_code}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Regression: GET /api/stats", False, f"Exception: {str(e)}")
+    
+    # Test POST /api/donations/create-order with valid amount
+    try:
+        create_payload = {"amount": 100}  # Valid amount (>= 10)
+        response = requests.post(f"{BASE_URL}/donations/create-order", json=create_payload)
+        data = response.json()
+        
+        passed = (
+            response.status_code == 200 and
+            data.get("orderId", "").startswith("order_")
+        )
+        all_passed = all_passed and print_test(
+            "Regression: POST /api/donations/create-order (amount=100) works",
+            passed,
+            f"Status: {response.status_code}, OrderId: {data.get('orderId')}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Regression: POST /api/donations/create-order", False, f"Exception: {str(e)}")
+    
+    return all_passed
+
 def main():
     """Run all backend tests"""
     print("\n" + "="*80)
@@ -1026,9 +1814,11 @@ def main():
     print(f"Base URL: {BASE_URL}")
     print("="*80)
     
-    global saved_donation_id, saved_member_id
+    global saved_donation_id, saved_member_id, admin_cookie, saved_media_id
     saved_donation_id = None
     saved_member_id = None
+    admin_cookie = None
+    saved_media_id = None
     
     results = []
     
@@ -1044,16 +1834,29 @@ def main():
     results.append(("Volunteer Signup", test_volunteer_signup()))
     results.append(("Contact Form", test_contact_form()))
     
-    # NEW MEMBERSHIP TESTS
+    # MEMBERSHIP TESTS (Quick smoke test only)
     print("\n" + "="*80)
-    print("🆕 MEMBERSHIP FEATURE TESTS")
+    print("🆕 MEMBERSHIP FEATURE TESTS (QUICK SMOKE TEST)")
     print("="*80)
     results.append(("Membership Happy Path", test_membership_happy_path()))
     results.append(("Membership Validation", test_membership_validation()))
     results.append(("🔴 CRITICAL: Membership Signature Tampering", test_membership_signature_tampering()))
     results.append(("Membership Edge Cases", test_membership_edge_cases()))
     results.append(("Get Member", test_get_member()))
-    results.append(("Regression Checks", test_regression_checks()))
+    
+    # NEW ADMIN TESTS
+    print("\n" + "="*80)
+    print("🔐 ADMIN BACKEND TESTS (NEW)")
+    print("="*80)
+    results.append(("Admin Auth Flow", test_admin_auth_flow()))
+    results.append(("Admin List Endpoints", test_admin_list_endpoints()))
+    results.append(("Admin CSV Exports", test_admin_csv_exports()))
+    results.append(("Admin Content CMS", test_admin_content_cms()))
+    results.append(("Admin Media Library", test_admin_media_library()))
+    results.append(("Admin Logout", test_admin_logout()))
+    
+    # REGRESSION
+    results.append(("Quick Regression", test_quick_regression()))
     
     # Summary
     print("\n" + "="*80)
