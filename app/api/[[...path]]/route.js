@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { handleAdminRoute } from '@/lib/admin/handlers'
+import { getContentMap, seedContentBlocks } from '@/lib/services'
+import { getDefaultsFromSchemas } from '@/lib/cms/schemas'
 
 // ────────────────────────────────────────────────────────────
 //  Maa Karma Devi Sangh Trust  •  API Routes
@@ -100,6 +102,16 @@ async function handleRoute(request, { params }) {
     // ── Health
     if ((route === '/' || route === '/root') && method === 'GET') {
       return handleCORS(NextResponse.json({ message: 'Maa Karma Devi Sangh Trust API is running', ok: true }))
+    }
+
+    // ── Public CMS content (read-only). Auto-seeds on first call so the
+    //    site renders identical text from the DB even before any admin edit.
+    if (route === '/content' && method === 'GET') {
+      const url = new URL(request.url)
+      const prefix = url.searchParams.get('prefix') || ''
+      try { await seedContentBlocks(getDefaultsFromSchemas()) } catch (e) { console.error('seed failed', e) }
+      const content = await getContentMap(prefix)
+      return handleCORS(NextResponse.json({ content }))
     }
 
     // ── Public stats (used on impact section)

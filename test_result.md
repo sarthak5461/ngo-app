@@ -412,6 +412,202 @@ backend:
             - POST /api/admin/content {} (no key) → 400 with "key required"
             - Upsert functionality working (updates existing or creates new)
 
+  - task: "Public CMS endpoint GET /api/content + auto-seed defaults"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js, /app/lib/services/index.js, /app/lib/cms/schemas.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            New PUBLIC (no-auth) endpoint to power the live website CMS.
+            GET /api/content                  → { content: { key: value, ... } }  (all CMS keys flat-mapped)
+            GET /api/content?prefix=home      → only keys starting with "home"  (e.g. home.hero.headline)
+            On first call (or any call where DB is missing managed keys), it seeds `content_blocks`
+            from `getDefaultsFromSchemas()` so the public site & admin editor both render identical
+            content out of the box (no manual seeding script required).
+
+            Test scenarios:
+              1. First call after wiping content_blocks → expects 200 with content map
+                 containing keys like 'home.hero.headline', 'header.cta.label', 'footer.about', etc.
+                 with values matching the fallback strings defined in /app/lib/cms/schemas.js.
+              2. Second call → returns same data (idempotent seed; no duplicate inserts).
+              3. With ?prefix=home → only keys starting with "home" returned (header/footer absent).
+              4. After admin POSTs an updated value via /api/admin/content, /api/content reflects the new value.
+              5. List-typed keys (e.g. 'header.nav', 'footer.links') return as JS arrays in `content`.
+              6. Endpoint is publicly accessible (no auth cookie required).
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ PASSED ALL SCENARIOS (5/5). Public CMS endpoint working perfectly:
+            
+            Test 1a: First GET /api/content auto-seeds defaults ✅
+            - Status: 200, seeded 52 content keys from schemas
+            - Expected keys present: home.hero.headline="Hope has a home.", home.hero.tagline="Shree Jagannath Swami Bhakt Shiromadi Maa Karma Devi Sangh Trust", header.cta.label="Become a Member"
+            - List-type fields (header.nav, footer.links) correctly returned as JS arrays
+            
+            Test 1b: Second GET /api/content is idempotent ✅
+            - DB count before: 52, after: 52 (stable, no duplicates)
+            
+            Test 1c: GET /api/content?prefix=home filters correctly ✅
+            - Returned 21 keys, all starting with "home"
+            - No header or footer keys present (correct filtering)
+            
+            Test 1d: GET /api/content?prefix=footer filters correctly ✅
+            - Returned 11 keys, all starting with "footer"
+            - No home keys present (correct filtering)
+            
+            Test 1e: Public endpoint accessible without auth ✅
+            - No auth cookie required, returns 200
+            
+            Auto-seed mechanism is production-ready and idempotent.
+
+  - task: "Admin /api/admin/content GET — auto-seed defaults"
+    implemented: true
+    working: true
+    file: "/app/lib/admin/handlers.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            Updated GET /api/admin/content to auto-seed default content blocks from the schemas
+            on every call (idempotent — only inserts missing keys). Ensures admin editor opens
+            with populated fields instead of empty inputs.
+            Test:
+              1. Wipe content_blocks. Login as admin. GET /api/admin/content → rows array contains
+                 every key from schemas with its fallback value. Subsequent GET returns same data
+                 (no duplicates).
+              2. Existing admin POST /api/admin/content { key, value } still works and overrides the seed.
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ PASSED ALL SCENARIOS (3/3). Admin CMS GET endpoint working perfectly:
+            
+            Test 2a: GET /api/admin/content without auth → 401 ✅
+            - Correctly requires authentication
+            
+            Test 2b: GET /api/admin/content with auth auto-seeds defaults ✅
+            - Status: 200, returned 52 rows (all schema defaults)
+            - Expected keys present: home.hero.headline, header.cta.label, footer.about
+            - Auto-seed mechanism working correctly
+            
+            Test 2c: Second GET /api/admin/content is idempotent ✅
+            - DB count before: 52, after: 52 (stable, no duplicates)
+            
+            Admin POST regression also tested and working:
+            - POST updates text fields correctly ✅
+            - POST updates list fields (header.nav) correctly ✅
+            - Public endpoint reflects admin updates ✅
+            - POST without key returns 400 validation error ✅
+            
+            Auto-seed + upsert mechanism is production-ready.
+
+  - task: "Admin Media library — disk-storage upload (multipart) + delete-with-cleanup"
+    implemented: true
+    working: true
+    file: "/app/lib/admin/handlers.js, /app/lib/storage/media.js, /app/lib/services/index.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            UPGRADED from base64-in-MongoDB to disk-based storage so we can store
+            real images (up to 10MB) and serve them as Next.js static files.
+
+            POST /api/admin/media (auth required) now accepts TWO content-types:
+              1) multipart/form-data with a 'file' field — preferred path. Saves
+                 the file to /app/public/uploads/<uuid>.<ext> and returns
+                 { id, name, mimeType, size, url:'/uploads/<uuid>.<ext>',
+                   uploadedBy, createdAt }.
+              2) application/json with legacy { name, mimeType, size, dataUrl } —
+                 the data URL is decoded into a Buffer and saved to disk too.
+                 Same return shape (always returns `url`, never `dataUrl`).
+
+            File-type whitelist: jpg/jpeg/png/gif/webp/svg/avif. Anything else gets `.bin`.
+            10MB hard cap on either path → 413 'File too large (max 10MB)' otherwise.
+
+            DELETE /api/admin/media/<id> (auth required):
+              - Reads the doc to get its `url`
+              - If url is under /uploads/ tries to unlink the file (best-effort)
+              - Removes the Mongo doc
+
+            GET /api/admin/media (auth required):
+              - Now supports ?q=<search>  → name regex match
+              - Returns `{ rows: [...] }` with at most 500 rows.
+
+            Test scenarios for backend agent:
+              1. Login as admin (admin123). POST /api/admin/media WITHOUT auth cookie → 401.
+              2. POST multipart with a small PNG buffer → 200 + body has
+                  { id, name, mimeType:'image/png', size, url:'/uploads/<uuid>.png', uploadedBy }.
+                  Then HTTP-GET that url (without /api prefix) → 200 image bytes.
+              3. POST multipart without a 'file' field → 400 'file required'.
+              4. POST JSON legacy with a tiny base64 PNG dataUrl → 200, returns `url`,
+                  GET that url → 200 image bytes.
+              5. POST JSON without dataUrl → 400 'name and dataUrl required'.
+              6. POST a >10MB buffer (e.g. 11MB) via multipart → 413 'File too large (max 10MB)'.
+              7. GET /api/admin/media → uploaded items in `rows`.
+              8. GET /api/admin/media?q=<partial-name> → only matching rows.
+              9. DELETE /api/admin/media/<id> → 200 ok:true; subsequent GET to its url → 404.
+              10. DELETE non-existent id → still 200 ok:true (idempotent).
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ PASSED ALL SCENARIOS (16/16). Phase 5 Media Management disk-based storage working perfectly:
+            
+            ✅ SCENARIO 1: Multipart Upload (Preferred Path) - 6/6 tests passed
+            - 1a: POST without auth → 401 ✅
+            - 1b: POST without 'file' field → 400 'file required' ✅
+            - 1c: POST with valid PNG → 200 with {id, name:'test-multipart.png', mimeType:'image/png', size:70, url:'/uploads/<uuid>.png', uploadedBy:'Super Admin'} ✅
+            - 1d: GET static file URL (https://ngo-next-platform.preview.emergentagent.com/uploads/<uuid>.png) → 200 with correct image bytes (70 bytes) ✅
+            - 1e: POST 11MB file → 413 'File too large (max 10MB)' ✅
+            - 1f: POST non-image file (.txt) → 200 with url:'/uploads/<uuid>.bin' (uploads successfully) ✅
+            
+            ✅ SCENARIO 2: JSON Legacy Path (dataUrl) - 4/4 tests passed
+            - 2a: POST with valid dataUrl → 200 with {id, name:'pixel.png', url:'/uploads/<uuid>.png', uploadedBy:'Super Admin'} ✅
+            - 2b: POST without dataUrl → 400 'name and dataUrl required' ✅
+            - 2c: POST without name → 400 'name and dataUrl required' ✅
+            - 2d: POST with invalid dataUrl → 400 'invalid dataUrl' ✅
+            
+            ✅ SCENARIO 3: GET Media List - 3/3 tests passed
+            - 3a: GET without cookie → 401 ✅
+            - 3b: GET with cookie → 200 with {rows:[...]} including all uploaded items (multipart + legacy) ✅
+            - 3c: GET with ?q=multipart → 200 with filtered results (only matching rows) ✅
+            
+            ✅ SCENARIO 4: DELETE Media with Disk Cleanup - 3/3 tests passed
+            - 4a: DELETE uploaded file → 200 {ok:true} ✅
+            - 4b: GET deleted file URL → 404 (file successfully removed from disk at /app/public/uploads/) ✅
+            - 4c: DELETE non-existent id → 200 {ok:true} (idempotent) ✅
+            
+            ✅ PHASE 5 REGRESSION - 5/5 tests passed
+            - POST /api/admin/login → 200 ✅
+            - GET /api/admin/me → 200 ✅
+            - GET /api/admin/stats → 200 ✅
+            - GET /api/content (public) → 200 ✅
+            - GET /api/admin/content → 200 ✅
+            
+            🎯 KEY FINDINGS:
+            1. Multipart/form-data upload path working perfectly (preferred method)
+            2. Legacy JSON dataUrl path still supported and working
+            3. File size validation enforced (10MB max → 413)
+            4. Static file serving working correctly (Next.js serves from /public/uploads/)
+            5. File deletion removes both DB record AND disk file (verified with 404)
+            6. Search functionality (?q=<search>) working correctly
+            7. Auth protection working (401 without cookie)
+            8. Non-image files handled gracefully (.bin extension)
+            9. All regression tests pass - no existing functionality broken
+            
+            Test file: /app/backend_test.py (updated with Phase 5 media tests, can be re-run anytime)
+            
+            NO ISSUES FOUND. Phase 5 Media Management is production-ready.
+
   - task: "Admin Media library"
     implemented: true
     working: true
@@ -485,12 +681,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "POST /api/donations/create-order — start donation flow"
-    - "POST /api/donations/mock-pay — mock Razorpay checkout simulator"
-    - "POST /api/donations/verify — server-side signature verification + persist donation"
-    - "GET /api/stats — public live impact stats"
-    - "POST /api/volunteer — volunteer signup"
-    - "POST /api/contact — contact form submission"
+    - "Admin Media library — disk-storage upload (multipart) + delete-with-cleanup"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -498,13 +689,52 @@ test_plan:
 agent_communication:
     - agent: "main"
       message: |
-        Phase 1 MVP built. Please test the donation pipeline end-to-end:
-          1. POST /api/donations/create-order { amount: 1500, cause: 'education' } -> capture orderId.
-          2. POST /api/donations/mock-pay { orderId } -> capture paymentId + signature.
-          3. POST /api/donations/verify { orderId, paymentId, signature, donor:{name,email,phone,pan,message} } -> expect 200 + donation with receiptNumber.
-          4. Tamper test: re-send /verify with signature='bad' -> expect 400.
-          5. Test GET /api/stats, POST /api/volunteer, POST /api/contact (validation errors and happy path).
-        Note: This is fully MOCKED Razorpay (no real keys); the HMAC verification path is real and is the production code path.
+        Phase 5 (Media Management) — Disk-based upload pipeline complete. Please test the new endpoints.
+
+        Backend changes summary:
+          • POST /api/admin/media now accepts multipart/form-data (preferred) AND legacy
+            application/json {name,mimeType,size,dataUrl}. Both paths persist the file to
+            /app/public/uploads/<uuid>.<ext> and return { url:'/uploads/<uuid>.<ext>', ... }.
+          • New helper /app/lib/storage/media.js handles disk writes + safe deletions
+            (path-traversal protected).
+          • DELETE /api/admin/media/<id> now also unlinks the file from disk.
+          • GET /api/admin/media supports ?q=<search> filter.
+          • 10MB hard cap on uploads → 413 if exceeded.
+
+        Test scenarios in detail are documented in the corresponding task in this file
+        ("Admin Media library — disk-storage upload (multipart) + delete-with-cleanup").
+
+        Important verification:
+          - After a successful POST, the returned URL must be GET-able directly from the
+            server (no /api prefix) and return the actual image bytes.
+          - After DELETE, that URL must 404.
+
+        Auth: same admin cookie as before (login with password 'admin123').
+
+    - agent: "main"
+      message: |
+        Phase 4 (CMS) — Visual Page Editor wiring complete. Please test the new CMS endpoints.
+
+        New / changed BACKEND endpoints to focus on:
+          1. Public:  GET /api/content                (no auth)
+                      GET /api/content?prefix=home    (no auth)
+          2. Admin:   GET /api/admin/content          (now auto-seeds defaults from schemas; auth required)
+                      POST /api/admin/content {key,value}   (existing — please regression test)
+
+        Expected behaviour:
+          • First call to either GET endpoint inserts the schema defaults into MongoDB collection
+            `content_blocks` (one doc per CMS key, e.g. 'home.hero.headline' → "Hope has a home.").
+          • Repeated calls are idempotent (no duplicate rows inserted, count of rows stable).
+          • Public /api/content returns { content: { 'home.hero.headline': 'Hope has a home.', ... } }.
+          • prefix filter narrows the result map to keys starting with the given string.
+          • Admin POST overrides the seeded value; subsequent GETs reflect the new value on both endpoints.
+          • List-typed schema fields ('header.nav', 'footer.links') store as JS arrays and return as arrays.
+
+        Regression: please re-run admin auth + admin/stats + admin/donations export to confirm nothing broke.
+
+        Auth: cookie 'mkds_admin_session' obtained from POST /api/admin/login {password:'admin123'}.
+
+        Test file already exists at /app/backend_test.py — please extend it with the above scenarios.
     - agent: "testing"
       message: |
         ✅ BACKEND TESTING COMPLETE - ALL TESTS PASSED (10/10)
@@ -613,3 +843,144 @@ agent_communication:
         Test file: /app/backend_test.py (updated with admin tests, can be re-run anytime)
         
         NO CRITICAL ISSUES FOUND. Admin backend is production-ready.
+    - agent: "testing"
+      message: |
+        ✅ PHASE 4 CMS BACKEND TESTING COMPLETE - ALL TESTS PASSED (19/19 CMS tests)
+        
+        Comprehensive Phase 4 CMS backend testing completed successfully. All new CMS endpoints working perfectly:
+        
+        ✅ PUBLIC CMS ENDPOINT (5/5 tests passed):
+        GET /api/content - Public read-only CMS endpoint with auto-seed
+        
+        Test 1a: First GET /api/content auto-seeds defaults ✅
+        - Status: 200, seeded 52 content keys from schemas
+        - Expected keys present with correct values:
+          • home.hero.headline = "Hope has a home."
+          • home.hero.tagline = "Shree Jagannath Swami Bhakt Shiromadi Maa Karma Devi Sangh Trust"
+          • header.cta.label = "Become a Member"
+        - List-type fields (header.nav, footer.links) correctly returned as JS arrays
+        
+        Test 1b: Second GET /api/content is idempotent ✅
+        - DB count stable (52 before, 52 after) - no duplicate inserts
+        
+        Test 1c: GET /api/content?prefix=home filters correctly ✅
+        - Returned 21 keys, all starting with "home"
+        - No header or footer keys present (correct filtering)
+        
+        Test 1d: GET /api/content?prefix=footer filters correctly ✅
+        - Returned 11 keys, all starting with "footer"
+        - No home keys present (correct filtering)
+        
+        Test 1e: Public endpoint accessible without auth ✅
+        - No auth cookie required, returns 200
+        
+        ✅ ADMIN CMS GET ENDPOINT (3/3 tests passed):
+        GET /api/admin/content - Admin endpoint with auto-seed
+        
+        Test 2a: GET /api/admin/content without auth → 401 ✅
+        - Correctly requires authentication
+        
+        Test 2b: GET /api/admin/content with auth auto-seeds defaults ✅
+        - Status: 200, returned 52 rows (all schema defaults)
+        - Expected keys present: home.hero.headline, header.cta.label, footer.about
+        
+        Test 2c: Second GET /api/admin/content is idempotent ✅
+        - DB count stable (52 before, 52 after) - no duplicates
+        
+        ✅ ADMIN CMS POST REGRESSION (5/5 tests passed):
+        POST /api/admin/content - Upsert content blocks
+        
+        Test 3a: POST updates text field ✅
+        - Updated home.hero.headline to "NEW HEADLINE FROM TEST"
+        
+        Test 3b: Public endpoint reflects admin update ✅
+        - GET /api/content returns updated value
+        
+        Test 3c: POST updates list field (header.nav) ✅
+        - Updated header.nav with 2-item array
+        - Value stored as JS array
+        
+        Test 3d: Public endpoint returns list as array ✅
+        - header.nav returned as array with updated values
+        - First item label = "Home Modified"
+        
+        Test 3e: POST without key returns 400 ✅
+        - Validation error: "key required"
+        
+        ✅ SMOKE REGRESSION (6/6 tests passed):
+        - POST /api/admin/login ✅
+        - GET /api/admin/me ✅
+        - GET /api/admin/stats ✅
+        - GET /api/stats ✅
+        - POST /api/donations/create-order ✅
+        - POST /api/contact ✅
+        
+        🎯 KEY FINDINGS:
+        1. Auto-seed mechanism is production-ready and idempotent
+        2. Public endpoint correctly serves CMS content without auth
+        3. Admin endpoint correctly requires auth and auto-seeds
+        4. Prefix filtering works correctly for both "home" and "footer"
+        5. List-type fields (header.nav, footer.links) correctly stored and returned as JS arrays
+        6. Admin POST upserts work for both text and list fields
+        7. Public endpoint immediately reflects admin updates
+        8. All regression tests pass - no existing functionality broken
+        
+        Test file: /app/backend_test.py (updated with Phase 4 CMS tests, can be re-run anytime)
+        
+        NO ISSUES FOUND. Phase 4 CMS backend is production-ready.
+
+    - agent: "testing"
+      message: |
+        ✅ PHASE 5 MEDIA MANAGEMENT TESTING COMPLETE - ALL TESTS PASSED (16/16)
+        
+        Comprehensive Phase 5 media management backend testing completed successfully. All disk-based storage endpoints working perfectly:
+        
+        ✅ MULTIPART UPLOAD PATH (6/6 tests passed):
+        POST /api/admin/media with multipart/form-data (preferred method)
+        - Without auth → 401 ✅
+        - Without 'file' field → 400 'file required' ✅
+        - With valid PNG → 200 with {id, name, mimeType, size, url:'/uploads/<uuid>.png', uploadedBy} ✅
+        - GET static file URL directly (https://...com/uploads/<uuid>.png) → 200 with correct image bytes ✅
+        - 11MB file → 413 'File too large (max 10MB)' ✅
+        - Non-image file (.txt) → 200 with url:'/uploads/<uuid>.bin' ✅
+        
+        ✅ JSON LEGACY PATH (4/4 tests passed):
+        POST /api/admin/media with JSON {name, mimeType, size, dataUrl}
+        - Valid dataUrl → 200 with url:'/uploads/<uuid>.png' (decoded to disk) ✅
+        - Without dataUrl → 400 'name and dataUrl required' ✅
+        - Without name → 400 'name and dataUrl required' ✅
+        - Invalid dataUrl → 400 'invalid dataUrl' ✅
+        
+        ✅ GET MEDIA LIST (3/3 tests passed):
+        GET /api/admin/media
+        - Without cookie → 401 ✅
+        - With cookie → 200 with {rows:[...]} including all uploaded items ✅
+        - With ?q=<search> → 200 with filtered results ✅
+        
+        ✅ DELETE WITH DISK CLEANUP (3/3 tests passed):
+        DELETE /api/admin/media/<id>
+        - Delete uploaded file → 200 {ok:true} ✅
+        - GET deleted file URL → 404 (file removed from /app/public/uploads/) ✅
+        - Delete non-existent id → 200 {ok:true} (idempotent) ✅
+        
+        ✅ PHASE 5 REGRESSION (5/5 tests passed):
+        - POST /api/admin/login → 200 ✅
+        - GET /api/admin/me → 200 ✅
+        - GET /api/admin/stats → 200 ✅
+        - GET /api/content (public) → 200 ✅
+        - GET /api/admin/content → 200 ✅
+        
+        🎯 KEY FINDINGS:
+        1. Multipart/form-data upload working perfectly (preferred method for large files)
+        2. Legacy JSON dataUrl path still supported for backward compatibility
+        3. File size validation enforced correctly (10MB max → 413)
+        4. Static file serving working via Next.js /public/uploads/ directory
+        5. File deletion removes BOTH DB record AND disk file (verified with 404)
+        6. Search functionality (?q=<search>) working correctly
+        7. Auth protection working (401 without cookie)
+        8. Non-image files handled gracefully with .bin extension
+        9. All regression tests pass - no existing functionality broken
+        
+        Test file: /app/backend_test.py (updated with comprehensive Phase 5 tests, can be re-run anytime)
+        
+        NO ISSUES FOUND. Phase 5 Media Management is production-ready.

@@ -1579,9 +1579,9 @@ def test_admin_content_cms():
     return all_passed
 
 def test_admin_media_library():
-    """Test 23: Admin Media Library"""
+    """Test 23: Admin Media Library - Phase 5 Disk-based Storage"""
     print("\n" + "="*80)
-    print("TESTING ADMIN MEDIA LIBRARY")
+    print("TESTING ADMIN MEDIA LIBRARY - PHASE 5 DISK-BASED STORAGE")
     print("="*80)
     
     all_passed = True
@@ -1593,79 +1593,282 @@ def test_admin_media_library():
         return False
     
     headers = {'Cookie': admin_cookie}
+    host = BASE_URL.rsplit('/api', 1)[0]  # For static file access
     
-    # Test GET media (initially empty or with existing items)
+    # ========== SCENARIO 1: POST multipart/form-data (preferred path) ==========
+    print("\n--- Scenario 1: Multipart Upload (Preferred Path) ---")
+    
+    # Test 1a: POST without auth → 401
     try:
-        response = requests.get(f"{BASE_URL}/admin/media", headers=headers)
-        data = response.json()
+        PNG_1PX = bytes.fromhex('89504E470D0A1A0A0000000D49484452000000010000000108060000001F15C4890000000D4944415478DA63F8FFFF3F0300050001A2A75DC9F40000000049454E44AE426082')
+        files = {'file': ('test.png', PNG_1PX, 'image/png')}
+        response = requests.post(f"{BASE_URL}/admin/media", files=files)
         
-        passed = (
-            response.status_code == 200 and
-            "rows" in data and
-            isinstance(data["rows"], list)
-        )
-        initial_count = len(data.get("rows", []))
+        passed = response.status_code == 401
         all_passed = all_passed and print_test(
-            "Admin Media: GET returns array",
+            "1a: POST multipart without auth → 401",
             passed,
-            f"Status: {response.status_code}, Count: {initial_count}"
+            f"Status: {response.status_code}"
         )
     except Exception as e:
         all_passed = False
-        print_test("Admin Media: GET", False, f"Exception: {str(e)}")
+        print_test("1a: POST without auth", False, f"Exception: {str(e)}")
     
-    # Test POST media (upload)
+    # Test 1b: POST without 'file' field → 400
     try:
-        media_payload = {
-            "name": "test.png",
-            "mimeType": "image/png",
-            "size": 100,
-            "dataUrl": "data:image/png;base64,iVBORw0KGgo="
-        }
-        response = requests.post(f"{BASE_URL}/admin/media", json=media_payload, headers=headers)
+        # Send multipart with an empty files dict (no 'file' field)
+        files = {'other': ('test.txt', b'test', 'text/plain')}  # Wrong field name
+        response = requests.post(f"{BASE_URL}/admin/media", files=files, headers=headers)
+        
+        passed = response.status_code == 400
+        all_passed = all_passed and print_test(
+            "1b: POST multipart without 'file' field → 400",
+            passed,
+            f"Status: {response.status_code}, Error: {response.text}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("1b: POST without file field", False, f"Exception: {str(e)}")
+    
+    # Test 1c: POST with valid PNG → 200 with proper response
+    try:
+        PNG_1PX = bytes.fromhex('89504E470D0A1A0A0000000D49484452000000010000000108060000001F15C4890000000D4944415478DA63F8FFFF3F0300050001A2A75DC9F40000000049454E44AE426082')
+        files = {'file': ('test-multipart.png', PNG_1PX, 'image/png')}
+        response = requests.post(f"{BASE_URL}/admin/media", files=files, headers=headers)
         data = response.json()
         
         saved_media_id = data.get("id")
+        media_url = data.get("url")
         
         passed = (
             response.status_code == 200 and
-            data.get("name") == "test.png" and
+            saved_media_id is not None and
+            data.get("name") == "test-multipart.png" and
             data.get("mimeType") == "image/png" and
-            saved_media_id is not None
+            data.get("size") == len(PNG_1PX) and
+            media_url and media_url.startswith("/uploads/") and
+            data.get("uploadedBy") == "Super Admin"
         )
         all_passed = all_passed and print_test(
-            "Admin Media: POST uploads media",
+            "1c: POST multipart with valid PNG → 200",
             passed,
-            f"Status: {response.status_code}, ID: {saved_media_id}, Name: {data.get('name')}"
+            f"Status: {response.status_code}, ID: {saved_media_id}, URL: {media_url}, Size: {data.get('size')}"
         )
     except Exception as e:
         all_passed = False
-        print_test("Admin Media: POST", False, f"Exception: {str(e)}")
+        print_test("1c: POST valid PNG", False, f"Exception: {str(e)}")
     
-    # Test GET media again (should include new item)
+    # Test 1d: GET the static file URL directly → 200 with image bytes
+    try:
+        if media_url:
+            static_url = host + media_url
+            response = requests.get(static_url)
+            
+            passed = (
+                response.status_code == 200 and
+                len(response.content) == len(PNG_1PX) and
+                response.content == PNG_1PX
+            )
+            all_passed = all_passed and print_test(
+                "1d: GET static file URL → 200 with correct bytes",
+                passed,
+                f"Status: {response.status_code}, URL: {static_url}, Size: {len(response.content)}"
+            )
+        else:
+            all_passed = False
+            print_test("1d: GET static file", False, "No media URL available")
+    except Exception as e:
+        all_passed = False
+        print_test("1d: GET static file", False, f"Exception: {str(e)}")
+    
+    # Test 1e: POST 11MB file → 413 (max is 10MB)
+    try:
+        large_buffer = b'X' * (11 * 1024 * 1024)  # 11MB
+        files = {'file': ('large.png', large_buffer, 'image/png')}
+        response = requests.post(f"{BASE_URL}/admin/media", files=files, headers=headers)
+        
+        passed = response.status_code == 413
+        all_passed = all_passed and print_test(
+            "1e: POST 11MB file → 413 (too large)",
+            passed,
+            f"Status: {response.status_code}, Error: {response.text}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("1e: POST large file", False, f"Exception: {str(e)}")
+    
+    # Test 1f: POST non-image file (e.g., .txt) → should still upload
+    try:
+        txt_content = b'This is a text file'
+        files = {'file': ('test.txt', txt_content, 'text/plain')}
+        response = requests.post(f"{BASE_URL}/admin/media", files=files, headers=headers)
+        data = response.json()
+        
+        passed = (
+            response.status_code == 200 and
+            data.get("id") is not None and
+            data.get("url") is not None
+        )
+        all_passed = all_passed and print_test(
+            "1f: POST non-image file (.txt) → 200 (uploads successfully)",
+            passed,
+            f"Status: {response.status_code}, URL: {data.get('url')}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("1f: POST non-image file", False, f"Exception: {str(e)}")
+    
+    # ========== SCENARIO 2: POST JSON legacy path ==========
+    print("\n--- Scenario 2: JSON Legacy Path (dataUrl) ---")
+    
+    # Test 2a: POST with valid dataUrl → 200
+    try:
+        legacy_payload = {
+            "name": "pixel.png",
+            "mimeType": "image/png",
+            "size": 67,
+            "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+        }
+        response = requests.post(f"{BASE_URL}/admin/media", json=legacy_payload, headers=headers)
+        data = response.json()
+        
+        legacy_media_id = data.get("id")
+        legacy_url = data.get("url")
+        
+        passed = (
+            response.status_code == 200 and
+            legacy_media_id is not None and
+            data.get("name") == "pixel.png" and
+            data.get("mimeType") == "image/png" and
+            legacy_url and legacy_url.startswith("/uploads/") and
+            data.get("uploadedBy") == "Super Admin"
+        )
+        all_passed = all_passed and print_test(
+            "2a: POST JSON with valid dataUrl → 200",
+            passed,
+            f"Status: {response.status_code}, ID: {legacy_media_id}, URL: {legacy_url}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("2a: POST JSON with dataUrl", False, f"Exception: {str(e)}")
+    
+    # Test 2b: POST without dataUrl → 400
+    try:
+        response = requests.post(f"{BASE_URL}/admin/media", json={"name": "x.png"}, headers=headers)
+        
+        passed = response.status_code == 400
+        all_passed = all_passed and print_test(
+            "2b: POST JSON without dataUrl → 400",
+            passed,
+            f"Status: {response.status_code}, Error: {response.text}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("2b: POST without dataUrl", False, f"Exception: {str(e)}")
+    
+    # Test 2c: POST without name → 400
+    try:
+        response = requests.post(f"{BASE_URL}/admin/media", json={
+            "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+        }, headers=headers)
+        
+        passed = response.status_code == 400
+        all_passed = all_passed and print_test(
+            "2c: POST JSON without name → 400",
+            passed,
+            f"Status: {response.status_code}, Error: {response.text}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("2c: POST without name", False, f"Exception: {str(e)}")
+    
+    # Test 2d: POST with invalid dataUrl → 400
+    try:
+        response = requests.post(f"{BASE_URL}/admin/media", json={
+            "name": "x.png",
+            "dataUrl": "not-a-data-url"
+        }, headers=headers)
+        
+        passed = response.status_code == 400
+        all_passed = all_passed and print_test(
+            "2d: POST JSON with invalid dataUrl → 400",
+            passed,
+            f"Status: {response.status_code}, Error: {response.text}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("2d: POST invalid dataUrl", False, f"Exception: {str(e)}")
+    
+    # ========== SCENARIO 3: GET /api/admin/media ==========
+    print("\n--- Scenario 3: GET Media List ---")
+    
+    # Test 3a: GET without cookie → 401
+    try:
+        response = requests.get(f"{BASE_URL}/admin/media")
+        
+        passed = response.status_code == 401
+        all_passed = all_passed and print_test(
+            "3a: GET without cookie → 401",
+            passed,
+            f"Status: {response.status_code}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("3a: GET without cookie", False, f"Exception: {str(e)}")
+    
+    # Test 3b: GET with cookie → 200 with rows
     try:
         response = requests.get(f"{BASE_URL}/admin/media", headers=headers)
         data = response.json()
         
         rows = data.get("rows", [])
-        has_test_png = any(row.get("name") == "test.png" for row in rows)
+        has_multipart = any(row.get("name") == "test-multipart.png" for row in rows)
+        has_legacy = any(row.get("name") == "pixel.png" for row in rows)
         
         passed = (
             response.status_code == 200 and
-            has_test_png
+            "rows" in data and
+            isinstance(rows, list) and
+            has_multipart and
+            has_legacy
         )
         all_passed = all_passed and print_test(
-            "Admin Media: GET includes new media",
+            "3b: GET with cookie → 200 with all uploaded items",
             passed,
-            f"Status: {response.status_code}, Has test.png: {has_test_png}, Count: {len(rows)}"
+            f"Status: {response.status_code}, Count: {len(rows)}, Has multipart: {has_multipart}, Has legacy: {has_legacy}"
         )
     except Exception as e:
         all_passed = False
-        print_test("Admin Media: GET after POST", False, f"Exception: {str(e)}")
+        print_test("3b: GET with cookie", False, f"Exception: {str(e)}")
     
-    # Test DELETE media
+    # Test 3c: GET with ?q=<search> → filtered results
     try:
-        if saved_media_id:
+        response = requests.get(f"{BASE_URL}/admin/media?q=multipart", headers=headers)
+        data = response.json()
+        
+        rows = data.get("rows", [])
+        all_match = all("multipart" in row.get("name", "").lower() for row in rows)
+        
+        passed = (
+            response.status_code == 200 and
+            len(rows) > 0 and
+            all_match
+        )
+        all_passed = all_passed and print_test(
+            "3c: GET with ?q=multipart → filtered results",
+            passed,
+            f"Status: {response.status_code}, Count: {len(rows)}, All match: {all_match}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("3c: GET with search", False, f"Exception: {str(e)}")
+    
+    # ========== SCENARIO 4: DELETE /api/admin/media/<id> ==========
+    print("\n--- Scenario 4: DELETE Media ---")
+    
+    # Test 4a: DELETE uploaded file → 200
+    try:
+        if saved_media_id and media_url:
             response = requests.delete(f"{BASE_URL}/admin/media/{saved_media_id}", headers=headers)
             data = response.json()
             
@@ -1674,37 +1877,53 @@ def test_admin_media_library():
                 data.get("ok") == True
             )
             all_passed = all_passed and print_test(
-                "Admin Media: DELETE removes media",
+                "4a: DELETE uploaded file → 200",
                 passed,
                 f"Status: {response.status_code}, OK: {data.get('ok')}"
             )
         else:
             all_passed = False
-            print_test("Admin Media: DELETE", False, "No saved media ID")
+            print_test("4a: DELETE", False, "No saved media ID or URL")
     except Exception as e:
         all_passed = False
-        print_test("Admin Media: DELETE", False, f"Exception: {str(e)}")
+        print_test("4a: DELETE", False, f"Exception: {str(e)}")
     
-    # Test GET media after delete (should not include deleted item)
+    # Test 4b: GET the static URL → 404 (file should be gone)
     try:
-        response = requests.get(f"{BASE_URL}/admin/media", headers=headers)
+        if media_url:
+            static_url = host + media_url
+            response = requests.get(static_url)
+            
+            passed = response.status_code == 404
+            all_passed = all_passed and print_test(
+                "4b: GET deleted file URL → 404 (file removed from disk)",
+                passed,
+                f"Status: {response.status_code}, URL: {static_url}"
+            )
+        else:
+            all_passed = False
+            print_test("4b: GET deleted file", False, "No media URL available")
+    except Exception as e:
+        all_passed = False
+        print_test("4b: GET deleted file", False, f"Exception: {str(e)}")
+    
+    # Test 4c: DELETE non-existent id → 200 (idempotent)
+    try:
+        response = requests.delete(f"{BASE_URL}/admin/media/non-existent-id-12345", headers=headers)
         data = response.json()
-        
-        rows = data.get("rows", [])
-        has_test_png = any(row.get("id") == saved_media_id for row in rows)
         
         passed = (
             response.status_code == 200 and
-            not has_test_png
+            data.get("ok") == True
         )
         all_passed = all_passed and print_test(
-            "Admin Media: GET after DELETE (item removed)",
+            "4c: DELETE non-existent id → 200 (idempotent)",
             passed,
-            f"Status: {response.status_code}, Has deleted item: {has_test_png}"
+            f"Status: {response.status_code}, OK: {data.get('ok')}"
         )
     except Exception as e:
         all_passed = False
-        print_test("Admin Media: GET after DELETE", False, f"Exception: {str(e)}")
+        print_test("4c: DELETE non-existent", False, f"Exception: {str(e)}")
     
     return all_passed
 
@@ -1762,6 +1981,123 @@ def test_admin_logout():
     
     return all_passed
 
+
+def test_phase5_regression():
+    """Test Phase 5: Quick regression for media management"""
+    print("\n" + "="*80)
+    print("TESTING PHASE 5 REGRESSION")
+    print("="*80)
+    
+    all_passed = True
+    
+    # Test 1: POST /api/admin/login
+    try:
+        response = requests.post(f"{BASE_URL}/admin/login", json={"password": "admin123"})
+        data = response.json()
+        
+        passed = (
+            response.status_code == 200 and
+            data.get("ok") == True
+        )
+        all_passed = all_passed and print_test(
+            "Regression: POST /api/admin/login",
+            passed,
+            f"Status: {response.status_code}"
+        )
+        
+        # Save cookie for subsequent tests
+        set_cookie = response.headers.get('Set-Cookie', '')
+        if 'mkds_admin_session=' in set_cookie:
+            cookie_value = set_cookie.split('mkds_admin_session=')[1].split(';')[0]
+            temp_cookie = f'mkds_admin_session={cookie_value}'
+        else:
+            temp_cookie = None
+    except Exception as e:
+        all_passed = False
+        temp_cookie = None
+        print_test("Regression: POST /api/admin/login", False, f"Exception: {str(e)}")
+    
+    if not temp_cookie:
+        print_test("Phase 5 Regression", False, "Could not obtain admin cookie")
+        return False
+    
+    headers = {'Cookie': temp_cookie}
+    
+    # Test 2: GET /api/admin/me
+    try:
+        response = requests.get(f"{BASE_URL}/admin/me", headers=headers)
+        data = response.json()
+        
+        passed = (
+            response.status_code == 200 and
+            "role" in data and
+            "name" in data
+        )
+        all_passed = all_passed and print_test(
+            "Regression: GET /api/admin/me",
+            passed,
+            f"Status: {response.status_code}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Regression: GET /api/admin/me", False, f"Exception: {str(e)}")
+    
+    # Test 3: GET /api/admin/stats
+    try:
+        response = requests.get(f"{BASE_URL}/admin/stats", headers=headers)
+        data = response.json()
+        
+        passed = (
+            response.status_code == 200 and
+            "totalRaised" in data
+        )
+        all_passed = all_passed and print_test(
+            "Regression: GET /api/admin/stats",
+            passed,
+            f"Status: {response.status_code}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Regression: GET /api/admin/stats", False, f"Exception: {str(e)}")
+    
+    # Test 4: GET /api/content (public)
+    try:
+        response = requests.get(f"{BASE_URL}/content")
+        data = response.json()
+        
+        passed = (
+            response.status_code == 200 and
+            "content" in data
+        )
+        all_passed = all_passed and print_test(
+            "Regression: GET /api/content",
+            passed,
+            f"Status: {response.status_code}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Regression: GET /api/content", False, f"Exception: {str(e)}")
+    
+    # Test 5: GET /api/admin/content
+    try:
+        response = requests.get(f"{BASE_URL}/admin/content", headers=headers)
+        data = response.json()
+        
+        passed = (
+            response.status_code == 200 and
+            "rows" in data
+        )
+        all_passed = all_passed and print_test(
+            "Regression: GET /api/admin/content",
+            passed,
+            f"Status: {response.status_code}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Regression: GET /api/admin/content", False, f"Exception: {str(e)}")
+    
+    return all_passed
+
 def test_quick_regression():
     """Test 25: Quick regression smoke test"""
     print("\n" + "="*80)
@@ -1803,6 +2139,560 @@ def test_quick_regression():
     except Exception as e:
         all_passed = False
         print_test("Regression: POST /api/donations/create-order", False, f"Exception: {str(e)}")
+    
+    return all_passed
+
+def test_public_cms_auto_seed():
+    """Test Phase 4: Public CMS endpoint GET /api/content with auto-seed"""
+    print("\n" + "="*80)
+    print("TESTING PUBLIC CMS ENDPOINT - AUTO-SEED DEFAULTS")
+    print("="*80)
+    
+    all_passed = True
+    
+    # First, wipe the content_blocks collection to test fresh seed
+    print("\n🧹 Wiping content_blocks collection for fresh test...")
+    try:
+        import subprocess
+        subprocess.run([
+            "mongosh", "mongodb://localhost:27017/your_database_name", 
+            "--quiet", "--eval", "db.content_blocks.deleteMany({})"
+        ], check=True, capture_output=True)
+        print("   ✅ Collection wiped successfully")
+    except Exception as e:
+        print(f"   ⚠️  Could not wipe collection: {e}")
+    
+    # Test 1: First call to /api/content should auto-seed defaults
+    try:
+        response = requests.get(f"{BASE_URL}/content")
+        data = response.json()
+        
+        content = data.get("content", {})
+        
+        # Check for expected keys from schemas
+        expected_keys = [
+            "home.hero.headline",
+            "home.hero.tagline",
+            "header.cta.label",
+            "footer.about",
+            "footer.copyright"
+        ]
+        
+        has_expected_keys = all(key in content for key in expected_keys)
+        
+        # Check specific values match schema defaults
+        correct_values = (
+            content.get("home.hero.headline") == "Hope has a home." and
+            content.get("home.hero.tagline") == "Shree Jagannath Swami Bhakt Shiromadi Maa Karma Devi Sangh Trust" and
+            content.get("header.cta.label") == "Become a Member"
+        )
+        
+        # Check list-type fields return as arrays
+        header_nav = content.get("header.nav", [])
+        footer_links = content.get("footer.links", [])
+        is_nav_array = isinstance(header_nav, list) and len(header_nav) > 0
+        is_footer_array = isinstance(footer_links, list) and len(footer_links) > 0
+        
+        passed = (
+            response.status_code == 200 and
+            has_expected_keys and
+            correct_values and
+            is_nav_array and
+            is_footer_array
+        )
+        
+        all_passed = all_passed and print_test(
+            "Test 1a: First GET /api/content auto-seeds defaults",
+            passed,
+            f"Status: {response.status_code}, Keys found: {len(content)}, Expected keys present: {has_expected_keys}, Values correct: {correct_values}, header.nav is array: {is_nav_array}, footer.links is array: {is_footer_array}"
+        )
+        
+        if not passed:
+            print(f"   Content keys: {list(content.keys())[:10]}...")
+            print(f"   home.hero.headline: {content.get('home.hero.headline')}")
+            print(f"   header.nav type: {type(header_nav)}, length: {len(header_nav) if isinstance(header_nav, list) else 'N/A'}")
+            
+    except Exception as e:
+        all_passed = False
+        print_test("Test 1a: First GET /api/content", False, f"Exception: {str(e)}")
+    
+    # Test 1b: Second call should be idempotent (no duplicate inserts)
+    try:
+        # Get count before second call
+        import subprocess
+        result = subprocess.run([
+            "mongosh", "mongodb://localhost:27017/your_database_name",
+            "--quiet", "--eval", "db.content_blocks.countDocuments({})"
+        ], capture_output=True, text=True, check=True)
+        count_before = int(result.stdout.strip())
+        
+        # Second call
+        response = requests.get(f"{BASE_URL}/content")
+        data = response.json()
+        
+        # Get count after second call
+        result = subprocess.run([
+            "mongosh", "mongodb://localhost:27017/your_database_name",
+            "--quiet", "--eval", "db.content_blocks.countDocuments({})"
+        ], capture_output=True, text=True, check=True)
+        count_after = int(result.stdout.strip())
+        
+        passed = (
+            response.status_code == 200 and
+            count_before == count_after and
+            len(data.get("content", {})) > 0
+        )
+        
+        all_passed = all_passed and print_test(
+            "Test 1b: Second GET /api/content is idempotent (no duplicates)",
+            passed,
+            f"Status: {response.status_code}, Count before: {count_before}, Count after: {count_after}, Stable: {count_before == count_after}"
+        )
+        
+    except Exception as e:
+        all_passed = False
+        print_test("Test 1b: Idempotent seed", False, f"Exception: {str(e)}")
+    
+    # Test 1c: GET /api/content?prefix=home filters correctly
+    try:
+        response = requests.get(f"{BASE_URL}/content?prefix=home")
+        data = response.json()
+        content = data.get("content", {})
+        
+        # All keys should start with "home"
+        all_start_with_home = all(key.startswith("home") for key in content.keys())
+        # Should NOT contain header or footer keys
+        no_header_keys = not any(key.startswith("header") for key in content.keys())
+        no_footer_keys = not any(key.startswith("footer") for key in content.keys())
+        
+        passed = (
+            response.status_code == 200 and
+            len(content) > 0 and
+            all_start_with_home and
+            no_header_keys and
+            no_footer_keys
+        )
+        
+        all_passed = all_passed and print_test(
+            "Test 1c: GET /api/content?prefix=home filters correctly",
+            passed,
+            f"Status: {response.status_code}, Keys count: {len(content)}, All start with 'home': {all_start_with_home}, No header keys: {no_header_keys}, No footer keys: {no_footer_keys}"
+        )
+        
+        if not passed and len(content) > 0:
+            print(f"   Sample keys: {list(content.keys())[:5]}")
+            
+    except Exception as e:
+        all_passed = False
+        print_test("Test 1c: Prefix filter home", False, f"Exception: {str(e)}")
+    
+    # Test 1d: GET /api/content?prefix=footer filters correctly
+    try:
+        response = requests.get(f"{BASE_URL}/content?prefix=footer")
+        data = response.json()
+        content = data.get("content", {})
+        
+        all_start_with_footer = all(key.startswith("footer") for key in content.keys())
+        no_home_keys = not any(key.startswith("home") for key in content.keys())
+        
+        passed = (
+            response.status_code == 200 and
+            len(content) > 0 and
+            all_start_with_footer and
+            no_home_keys
+        )
+        
+        all_passed = all_passed and print_test(
+            "Test 1d: GET /api/content?prefix=footer filters correctly",
+            passed,
+            f"Status: {response.status_code}, Keys count: {len(content)}, All start with 'footer': {all_start_with_footer}, No home keys: {no_home_keys}"
+        )
+        
+    except Exception as e:
+        all_passed = False
+        print_test("Test 1d: Prefix filter footer", False, f"Exception: {str(e)}")
+    
+    # Test 1e: Endpoint is publicly accessible (no auth required)
+    try:
+        # Call without any auth headers/cookies
+        response = requests.get(f"{BASE_URL}/content")
+        passed = response.status_code == 200
+        
+        all_passed = all_passed and print_test(
+            "Test 1e: Public endpoint (no auth required)",
+            passed,
+            f"Status: {response.status_code}, Accessible without auth: {passed}"
+        )
+        
+    except Exception as e:
+        all_passed = False
+        print_test("Test 1e: Public access", False, f"Exception: {str(e)}")
+    
+    return all_passed
+
+def test_admin_cms_auto_seed():
+    """Test Phase 4: Admin CMS endpoint GET /api/admin/content with auto-seed"""
+    print("\n" + "="*80)
+    print("TESTING ADMIN CMS ENDPOINT - AUTO-SEED DEFAULTS")
+    print("="*80)
+    
+    all_passed = True
+    
+    # First, login as admin to get cookie (always re-login for this test)
+    global admin_cookie
+    try:
+        response = requests.post(f"{BASE_URL}/admin/login", json={"password": "admin123"})
+        if response.status_code == 200:
+            admin_cookie = response.cookies.get("mkds_admin_session")
+            print("   ✅ Admin login successful")
+        else:
+            print("   ❌ Admin login failed")
+            return False
+    except Exception as e:
+        print(f"   ❌ Admin login exception: {e}")
+        return False
+    
+    # Wipe content_blocks for fresh test
+    print("\n🧹 Wiping content_blocks collection for admin test...")
+    try:
+        import subprocess
+        subprocess.run([
+            "mongosh", "mongodb://localhost:27017/your_database_name",
+            "--quiet", "--eval", "db.content_blocks.deleteMany({})"
+        ], check=True, capture_output=True)
+        print("   ✅ Collection wiped successfully")
+    except Exception as e:
+        print(f"   ⚠️  Could not wipe collection: {e}")
+    
+    # Test 2a: GET /api/admin/content without auth should return 401
+    try:
+        response = requests.get(f"{BASE_URL}/admin/content")
+        passed = response.status_code == 401
+        
+        all_passed = all_passed and print_test(
+            "Test 2a: GET /api/admin/content without auth → 401",
+            passed,
+            f"Status: {response.status_code}, Correctly requires auth: {passed}"
+        )
+        
+    except Exception as e:
+        all_passed = False
+        print_test("Test 2a: Auth required", False, f"Exception: {str(e)}")
+    
+    # Test 2b: GET /api/admin/content with auth auto-seeds and returns rows
+    try:
+        cookies = {"mkds_admin_session": admin_cookie}
+        response = requests.get(f"{BASE_URL}/admin/content", cookies=cookies)
+        data = response.json()
+        
+        rows = data.get("rows", [])
+        
+        # Should have many rows (all schema defaults)
+        has_many_rows = len(rows) > 20
+        
+        # Check for expected keys
+        keys_in_rows = [row.get("key") for row in rows]
+        has_expected_keys = (
+            "home.hero.headline" in keys_in_rows and
+            "header.cta.label" in keys_in_rows and
+            "footer.about" in keys_in_rows
+        )
+        
+        passed = (
+            response.status_code == 200 and
+            has_many_rows and
+            has_expected_keys
+        )
+        
+        all_passed = all_passed and print_test(
+            "Test 2b: GET /api/admin/content with auth auto-seeds defaults",
+            passed,
+            f"Status: {response.status_code}, Rows count: {len(rows)}, Has many rows (>20): {has_many_rows}, Expected keys present: {has_expected_keys}"
+        )
+        
+        if not passed:
+            print(f"   Sample keys: {keys_in_rows[:5]}")
+            
+    except Exception as e:
+        all_passed = False
+        print_test("Test 2b: Admin GET with auto-seed", False, f"Exception: {str(e)}")
+    
+    # Test 2c: Second GET should be idempotent
+    try:
+        import subprocess
+        result = subprocess.run([
+            "mongosh", "mongodb://localhost:27017/your_database_name",
+            "--quiet", "--eval", "db.content_blocks.countDocuments({})"
+        ], capture_output=True, text=True, check=True)
+        count_before = int(result.stdout.strip())
+        
+        cookies = {"mkds_admin_session": admin_cookie}
+        response = requests.get(f"{BASE_URL}/admin/content", cookies=cookies)
+        
+        result = subprocess.run([
+            "mongosh", "mongodb://localhost:27017/your_database_name",
+            "--quiet", "--eval", "db.content_blocks.countDocuments({})"
+        ], capture_output=True, text=True, check=True)
+        count_after = int(result.stdout.strip())
+        
+        passed = (
+            response.status_code == 200 and
+            count_before == count_after
+        )
+        
+        all_passed = all_passed and print_test(
+            "Test 2c: Second GET /api/admin/content is idempotent",
+            passed,
+            f"Status: {response.status_code}, Count before: {count_before}, Count after: {count_after}, Stable: {count_before == count_after}"
+        )
+        
+    except Exception as e:
+        all_passed = False
+        print_test("Test 2c: Idempotent admin seed", False, f"Exception: {str(e)}")
+    
+    return all_passed
+
+def test_admin_cms_post_regression():
+    """Test Phase 4: Admin CMS POST regression - upsert content blocks"""
+    print("\n" + "="*80)
+    print("TESTING ADMIN CMS POST - REGRESSION TEST")
+    print("="*80)
+    
+    all_passed = True
+    
+    # Re-login to ensure we have valid cookie
+    global admin_cookie
+    try:
+        response = requests.post(f"{BASE_URL}/admin/login", json={"password": "admin123"})
+        if response.status_code == 200:
+            admin_cookie = response.cookies.get("mkds_admin_session")
+        else:
+            print("   ❌ Admin login failed for POST regression test")
+            return False
+    except Exception as e:
+        print(f"   ❌ Admin login exception: {e}")
+        return False
+    
+    cookies = {"mkds_admin_session": admin_cookie}
+    
+    # Test 3a: POST text field
+    try:
+        payload = {"key": "home.hero.headline", "value": "NEW HEADLINE FROM TEST"}
+        response = requests.post(f"{BASE_URL}/admin/content", json=payload, cookies=cookies)
+        data = response.json()
+        
+        passed = (
+            response.status_code == 200 and
+            data.get("key") == "home.hero.headline" and
+            data.get("value") == "NEW HEADLINE FROM TEST"
+        )
+        
+        all_passed = all_passed and print_test(
+            "Test 3a: POST /api/admin/content updates text field",
+            passed,
+            f"Status: {response.status_code}, Key: {data.get('key')}, Value updated: {data.get('value') == 'NEW HEADLINE FROM TEST'}"
+        )
+        
+    except Exception as e:
+        all_passed = False
+        print_test("Test 3a: POST text field", False, f"Exception: {str(e)}")
+    
+    # Test 3b: Verify public endpoint reflects the change
+    try:
+        response = requests.get(f"{BASE_URL}/content")
+        data = response.json()
+        content = data.get("content", {})
+        
+        passed = content.get("home.hero.headline") == "NEW HEADLINE FROM TEST"
+        
+        all_passed = all_passed and print_test(
+            "Test 3b: Public GET /api/content reflects admin update",
+            passed,
+            f"Status: {response.status_code}, Value in public endpoint: {content.get('home.hero.headline')}"
+        )
+        
+    except Exception as e:
+        all_passed = False
+        print_test("Test 3b: Public reflects update", False, f"Exception: {str(e)}")
+    
+    # Test 3c: POST list-type field (header.nav)
+    try:
+        payload = {
+            "key": "header.nav",
+            "value": [
+                {"label": "Home Modified", "href": "/", "enabled": True},
+                {"label": "About Modified", "href": "/about", "enabled": True}
+            ]
+        }
+        response = requests.post(f"{BASE_URL}/admin/content", json=payload, cookies=cookies)
+        data = response.json()
+        
+        passed = (
+            response.status_code == 200 and
+            data.get("key") == "header.nav" and
+            isinstance(data.get("value"), list) and
+            len(data.get("value", [])) == 2
+        )
+        
+        all_passed = all_passed and print_test(
+            "Test 3c: POST /api/admin/content updates list field (header.nav)",
+            passed,
+            f"Status: {response.status_code}, Key: {data.get('key')}, Value is list: {isinstance(data.get('value'), list)}, Length: {len(data.get('value', []))}"
+        )
+        
+    except Exception as e:
+        all_passed = False
+        print_test("Test 3c: POST list field", False, f"Exception: {str(e)}")
+    
+    # Test 3d: Verify public endpoint returns list as array
+    try:
+        response = requests.get(f"{BASE_URL}/content")
+        data = response.json()
+        content = data.get("content", {})
+        header_nav = content.get("header.nav", [])
+        
+        passed = (
+            isinstance(header_nav, list) and
+            len(header_nav) == 2 and
+            header_nav[0].get("label") == "Home Modified"
+        )
+        
+        all_passed = all_passed and print_test(
+            "Test 3d: Public GET returns header.nav as array with updated values",
+            passed,
+            f"Status: {response.status_code}, Is array: {isinstance(header_nav, list)}, Length: {len(header_nav) if isinstance(header_nav, list) else 'N/A'}, First label: {header_nav[0].get('label') if len(header_nav) > 0 else 'N/A'}"
+        )
+        
+    except Exception as e:
+        all_passed = False
+        print_test("Test 3d: Public returns array", False, f"Exception: {str(e)}")
+    
+    # Test 3e: POST without key should return 400
+    try:
+        payload = {"value": "some value"}
+        response = requests.post(f"{BASE_URL}/admin/content", json=payload, cookies=cookies)
+        data = response.json()
+        
+        passed = (
+            response.status_code == 400 and
+            "key required" in data.get("error", "").lower()
+        )
+        
+        all_passed = all_passed and print_test(
+            "Test 3e: POST /api/admin/content without key → 400",
+            passed,
+            f"Status: {response.status_code}, Error message: {data.get('error')}"
+        )
+        
+    except Exception as e:
+        all_passed = False
+        print_test("Test 3e: POST validation", False, f"Exception: {str(e)}")
+    
+    return all_passed
+
+def test_cms_smoke_regression():
+    """Test Phase 4: Quick smoke tests for other endpoints (regression)"""
+    print("\n" + "="*80)
+    print("TESTING CMS PHASE 4 - SMOKE REGRESSION")
+    print("="*80)
+    
+    all_passed = True
+    
+    # Re-login to ensure we have valid cookie
+    global admin_cookie
+    try:
+        response = requests.post(f"{BASE_URL}/admin/login", json={"password": "admin123"})
+        if response.status_code == 200:
+            admin_cookie = response.cookies.get("mkds_admin_session")
+        else:
+            print("   ❌ Admin login failed for smoke regression test")
+            # Continue with tests anyway, some don't need auth
+    except Exception as e:
+        print(f"   ⚠️  Admin login exception: {e}")
+    
+    cookies = {"mkds_admin_session": admin_cookie} if admin_cookie else {}
+    
+    # Test: POST /api/admin/login
+    try:
+        response = requests.post(f"{BASE_URL}/admin/login", json={"password": "admin123"})
+        passed = response.status_code == 200
+        all_passed = all_passed and print_test(
+            "Smoke: POST /api/admin/login",
+            passed,
+            f"Status: {response.status_code}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Smoke: Admin login", False, f"Exception: {str(e)}")
+    
+    # Test: GET /api/admin/me
+    try:
+        response = requests.get(f"{BASE_URL}/admin/me", cookies=cookies)
+        passed = response.status_code == 200
+        all_passed = all_passed and print_test(
+            "Smoke: GET /api/admin/me",
+            passed,
+            f"Status: {response.status_code}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Smoke: Admin me", False, f"Exception: {str(e)}")
+    
+    # Test: GET /api/admin/stats
+    try:
+        response = requests.get(f"{BASE_URL}/admin/stats", cookies=cookies)
+        passed = response.status_code == 200
+        all_passed = all_passed and print_test(
+            "Smoke: GET /api/admin/stats",
+            passed,
+            f"Status: {response.status_code}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Smoke: Admin stats", False, f"Exception: {str(e)}")
+    
+    # Test: GET /api/stats
+    try:
+        response = requests.get(f"{BASE_URL}/stats")
+        passed = response.status_code == 200
+        all_passed = all_passed and print_test(
+            "Smoke: GET /api/stats",
+            passed,
+            f"Status: {response.status_code}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Smoke: Public stats", False, f"Exception: {str(e)}")
+    
+    # Test: POST /api/donations/create-order
+    try:
+        response = requests.post(f"{BASE_URL}/donations/create-order", json={"amount": 500, "cause": "general"})
+        passed = response.status_code == 200 and "orderId" in response.json()
+        all_passed = all_passed and print_test(
+            "Smoke: POST /api/donations/create-order",
+            passed,
+            f"Status: {response.status_code}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Smoke: Create order", False, f"Exception: {str(e)}")
+    
+    # Test: POST /api/contact
+    try:
+        response = requests.post(f"{BASE_URL}/contact", json={
+            "name": "Test User",
+            "email": "test@example.com",
+            "message": "Test message"
+        })
+        passed = response.status_code == 200
+        all_passed = all_passed and print_test(
+            "Smoke: POST /api/contact",
+            passed,
+            f"Status: {response.status_code}"
+        )
+    except Exception as e:
+        all_passed = False
+        print_test("Smoke: Contact", False, f"Exception: {str(e)}")
     
     return all_passed
 
@@ -1854,6 +2744,18 @@ def main():
     results.append(("Admin Content CMS", test_admin_content_cms()))
     results.append(("Admin Media Library", test_admin_media_library()))
     results.append(("Admin Logout", test_admin_logout()))
+    
+    # PHASE 4 CMS TESTS (NEW)
+    print("\n" + "="*80)
+    print("📝 PHASE 4 CMS TESTS (NEW)")
+    print("="*80)
+    results.append(("Public CMS Auto-Seed", test_public_cms_auto_seed()))
+    results.append(("Admin CMS Auto-Seed", test_admin_cms_auto_seed()))
+    results.append(("Admin CMS POST Regression", test_admin_cms_post_regression()))
+    results.append(("CMS Smoke Regression", test_cms_smoke_regression()))
+    
+    # PHASE 5 REGRESSION
+    results.append(("Phase 5 Regression", test_phase5_regression()))
     
     # REGRESSION
     results.append(("Quick Regression", test_quick_regression()))

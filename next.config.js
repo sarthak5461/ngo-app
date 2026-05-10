@@ -6,6 +6,8 @@ const nextConfig = {
   experimental: {
     // Remove if not using Server Components
     serverComponentsExternalPackages: ['mongodb'],
+    // Allow up to 10 MB request bodies (media uploads via Server Actions).
+    serverActions: { bodySizeLimit: '10mb' },
   },
   webpack(config, { dev }) {
     if (dev) {
