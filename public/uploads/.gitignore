@@ -1,0 +1,3 @@
+# Persisted user-uploaded media — keep folder, ignore contents
+*
+!.gitignore

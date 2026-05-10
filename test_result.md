@@ -508,6 +508,106 @@ backend:
             
             Auto-seed + upsert mechanism is production-ready.
 
+  - task: "Admin Media library — disk-storage upload (multipart) + delete-with-cleanup"
+    implemented: true
+    working: true
+    file: "/app/lib/admin/handlers.js, /app/lib/storage/media.js, /app/lib/services/index.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            UPGRADED from base64-in-MongoDB to disk-based storage so we can store
+            real images (up to 10MB) and serve them as Next.js static files.
+
+            POST /api/admin/media (auth required) now accepts TWO content-types:
+              1) multipart/form-data with a 'file' field — preferred path. Saves
+                 the file to /app/public/uploads/<uuid>.<ext> and returns
+                 { id, name, mimeType, size, url:'/uploads/<uuid>.<ext>',
+                   uploadedBy, createdAt }.
+              2) application/json with legacy { name, mimeType, size, dataUrl } —
+                 the data URL is decoded into a Buffer and saved to disk too.
+                 Same return shape (always returns `url`, never `dataUrl`).
+
+            File-type whitelist: jpg/jpeg/png/gif/webp/svg/avif. Anything else gets `.bin`.
+            10MB hard cap on either path → 413 'File too large (max 10MB)' otherwise.
+
+            DELETE /api/admin/media/<id> (auth required):
+              - Reads the doc to get its `url`
+              - If url is under /uploads/ tries to unlink the file (best-effort)
+              - Removes the Mongo doc
+
+            GET /api/admin/media (auth required):
+              - Now supports ?q=<search>  → name regex match
+              - Returns `{ rows: [...] }` with at most 500 rows.
+
+            Test scenarios for backend agent:
+              1. Login as admin (admin123). POST /api/admin/media WITHOUT auth cookie → 401.
+              2. POST multipart with a small PNG buffer → 200 + body has
+                  { id, name, mimeType:'image/png', size, url:'/uploads/<uuid>.png', uploadedBy }.
+                  Then HTTP-GET that url (without /api prefix) → 200 image bytes.
+              3. POST multipart without a 'file' field → 400 'file required'.
+              4. POST JSON legacy with a tiny base64 PNG dataUrl → 200, returns `url`,
+                  GET that url → 200 image bytes.
+              5. POST JSON without dataUrl → 400 'name and dataUrl required'.
+              6. POST a >10MB buffer (e.g. 11MB) via multipart → 413 'File too large (max 10MB)'.
+              7. GET /api/admin/media → uploaded items in `rows`.
+              8. GET /api/admin/media?q=<partial-name> → only matching rows.
+              9. DELETE /api/admin/media/<id> → 200 ok:true; subsequent GET to its url → 404.
+              10. DELETE non-existent id → still 200 ok:true (idempotent).
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ PASSED ALL SCENARIOS (16/16). Phase 5 Media Management disk-based storage working perfectly:
+            
+            ✅ SCENARIO 1: Multipart Upload (Preferred Path) - 6/6 tests passed
+            - 1a: POST without auth → 401 ✅
+            - 1b: POST without 'file' field → 400 'file required' ✅
+            - 1c: POST with valid PNG → 200 with {id, name:'test-multipart.png', mimeType:'image/png', size:70, url:'/uploads/<uuid>.png', uploadedBy:'Super Admin'} ✅
+            - 1d: GET static file URL (https://ngo-next-platform.preview.emergentagent.com/uploads/<uuid>.png) → 200 with correct image bytes (70 bytes) ✅
+            - 1e: POST 11MB file → 413 'File too large (max 10MB)' ✅
+            - 1f: POST non-image file (.txt) → 200 with url:'/uploads/<uuid>.bin' (uploads successfully) ✅
+            
+            ✅ SCENARIO 2: JSON Legacy Path (dataUrl) - 4/4 tests passed
+            - 2a: POST with valid dataUrl → 200 with {id, name:'pixel.png', url:'/uploads/<uuid>.png', uploadedBy:'Super Admin'} ✅
+            - 2b: POST without dataUrl → 400 'name and dataUrl required' ✅
+            - 2c: POST without name → 400 'name and dataUrl required' ✅
+            - 2d: POST with invalid dataUrl → 400 'invalid dataUrl' ✅
+            
+            ✅ SCENARIO 3: GET Media List - 3/3 tests passed
+            - 3a: GET without cookie → 401 ✅
+            - 3b: GET with cookie → 200 with {rows:[...]} including all uploaded items (multipart + legacy) ✅
+            - 3c: GET with ?q=multipart → 200 with filtered results (only matching rows) ✅
+            
+            ✅ SCENARIO 4: DELETE Media with Disk Cleanup - 3/3 tests passed
+            - 4a: DELETE uploaded file → 200 {ok:true} ✅
+            - 4b: GET deleted file URL → 404 (file successfully removed from disk at /app/public/uploads/) ✅
+            - 4c: DELETE non-existent id → 200 {ok:true} (idempotent) ✅
+            
+            ✅ PHASE 5 REGRESSION - 5/5 tests passed
+            - POST /api/admin/login → 200 ✅
+            - GET /api/admin/me → 200 ✅
+            - GET /api/admin/stats → 200 ✅
+            - GET /api/content (public) → 200 ✅
+            - GET /api/admin/content → 200 ✅
+            
+            🎯 KEY FINDINGS:
+            1. Multipart/form-data upload path working perfectly (preferred method)
+            2. Legacy JSON dataUrl path still supported and working
+            3. File size validation enforced (10MB max → 413)
+            4. Static file serving working correctly (Next.js serves from /public/uploads/)
+            5. File deletion removes both DB record AND disk file (verified with 404)
+            6. Search functionality (?q=<search>) working correctly
+            7. Auth protection working (401 without cookie)
+            8. Non-image files handled gracefully (.bin extension)
+            9. All regression tests pass - no existing functionality broken
+            
+            Test file: /app/backend_test.py (updated with Phase 5 media tests, can be re-run anytime)
+            
+            NO ISSUES FOUND. Phase 5 Media Management is production-ready.
+
   - task: "Admin Media library"
     implemented: true
     working: true
@@ -581,14 +681,36 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Public CMS endpoint GET /api/content + auto-seed defaults"
-    - "Admin /api/admin/content GET — auto-seed defaults"
-    - "Admin CMS — content blocks CRUD"
+    - "Admin Media library — disk-storage upload (multipart) + delete-with-cleanup"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
+    - agent: "main"
+      message: |
+        Phase 5 (Media Management) — Disk-based upload pipeline complete. Please test the new endpoints.
+
+        Backend changes summary:
+          • POST /api/admin/media now accepts multipart/form-data (preferred) AND legacy
+            application/json {name,mimeType,size,dataUrl}. Both paths persist the file to
+            /app/public/uploads/<uuid>.<ext> and return { url:'/uploads/<uuid>.<ext>', ... }.
+          • New helper /app/lib/storage/media.js handles disk writes + safe deletions
+            (path-traversal protected).
+          • DELETE /api/admin/media/<id> now also unlinks the file from disk.
+          • GET /api/admin/media supports ?q=<search> filter.
+          • 10MB hard cap on uploads → 413 if exceeded.
+
+        Test scenarios in detail are documented in the corresponding task in this file
+        ("Admin Media library — disk-storage upload (multipart) + delete-with-cleanup").
+
+        Important verification:
+          - After a successful POST, the returned URL must be GET-able directly from the
+            server (no /api prefix) and return the actual image bytes.
+          - After DELETE, that URL must 404.
+
+        Auth: same admin cookie as before (login with password 'admin123').
+
     - agent: "main"
       message: |
         Phase 4 (CMS) — Visual Page Editor wiring complete. Please test the new CMS endpoints.
@@ -806,3 +928,59 @@ agent_communication:
         Test file: /app/backend_test.py (updated with Phase 4 CMS tests, can be re-run anytime)
         
         NO ISSUES FOUND. Phase 4 CMS backend is production-ready.
+
+    - agent: "testing"
+      message: |
+        ✅ PHASE 5 MEDIA MANAGEMENT TESTING COMPLETE - ALL TESTS PASSED (16/16)
+        
+        Comprehensive Phase 5 media management backend testing completed successfully. All disk-based storage endpoints working perfectly:
+        
+        ✅ MULTIPART UPLOAD PATH (6/6 tests passed):
+        POST /api/admin/media with multipart/form-data (preferred method)
+        - Without auth → 401 ✅
+        - Without 'file' field → 400 'file required' ✅
+        - With valid PNG → 200 with {id, name, mimeType, size, url:'/uploads/<uuid>.png', uploadedBy} ✅
+        - GET static file URL directly (https://...com/uploads/<uuid>.png) → 200 with correct image bytes ✅
+        - 11MB file → 413 'File too large (max 10MB)' ✅
+        - Non-image file (.txt) → 200 with url:'/uploads/<uuid>.bin' ✅
+        
+        ✅ JSON LEGACY PATH (4/4 tests passed):
+        POST /api/admin/media with JSON {name, mimeType, size, dataUrl}
+        - Valid dataUrl → 200 with url:'/uploads/<uuid>.png' (decoded to disk) ✅
+        - Without dataUrl → 400 'name and dataUrl required' ✅
+        - Without name → 400 'name and dataUrl required' ✅
+        - Invalid dataUrl → 400 'invalid dataUrl' ✅
+        
+        ✅ GET MEDIA LIST (3/3 tests passed):
+        GET /api/admin/media
+        - Without cookie → 401 ✅
+        - With cookie → 200 with {rows:[...]} including all uploaded items ✅
+        - With ?q=<search> → 200 with filtered results ✅
+        
+        ✅ DELETE WITH DISK CLEANUP (3/3 tests passed):
+        DELETE /api/admin/media/<id>
+        - Delete uploaded file → 200 {ok:true} ✅
+        - GET deleted file URL → 404 (file removed from /app/public/uploads/) ✅
+        - Delete non-existent id → 200 {ok:true} (idempotent) ✅
+        
+        ✅ PHASE 5 REGRESSION (5/5 tests passed):
+        - POST /api/admin/login → 200 ✅
+        - GET /api/admin/me → 200 ✅
+        - GET /api/admin/stats → 200 ✅
+        - GET /api/content (public) → 200 ✅
+        - GET /api/admin/content → 200 ✅
+        
+        🎯 KEY FINDINGS:
+        1. Multipart/form-data upload working perfectly (preferred method for large files)
+        2. Legacy JSON dataUrl path still supported for backward compatibility
+        3. File size validation enforced correctly (10MB max → 413)
+        4. Static file serving working via Next.js /public/uploads/ directory
+        5. File deletion removes BOTH DB record AND disk file (verified with 404)
+        6. Search functionality (?q=<search>) working correctly
+        7. Auth protection working (401 without cookie)
+        8. Non-image files handled gracefully with .bin extension
+        9. All regression tests pass - no existing functionality broken
+        
+        Test file: /app/backend_test.py (updated with comprehensive Phase 5 tests, can be re-run anytime)
+        
+        NO ISSUES FOUND. Phase 5 Media Management is production-ready.
