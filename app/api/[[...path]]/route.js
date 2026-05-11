@@ -167,6 +167,46 @@ async function handleRoute(request, { params }) {
       );
     }
 
+
+    // == MEDIA DELETE ----------------------------------------
+
+
+    if (route.startsWith("/admin/media") && method === 'DELETE'){
+      const id = route.replace("/admin/media", "");
+    
+      const media = await db.collection("media").findOne({
+        _id: new ObjectId(id),
+      });
+
+      if(!media){
+        return handleCORS(
+          NextResponse.json({error: "Media not found"},
+            {status: 404}
+          )
+        )
+      }
+
+      // Delete image from cloudinary
+
+      if (media.publicId){
+        await cloudinary.uploader.destroy(media.publicId);
+      }
+
+      // Delte DB record
+
+      await db.collection("media").deleteOne({
+        _id: new ObjectId(id).
+      });
+
+       return handleCORS(
+          NextResponse.json(
+            {success: true}
+          )
+        );
+
+    }
+
+
     // ── Delegate /admin/* to admin handlers (auth checked inside) ──
     if (route.startsWith("/admin/") || route === "/admin") {
       const res = await handleAdminRoute(request, route, method);
