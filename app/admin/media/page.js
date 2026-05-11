@@ -137,8 +137,7 @@ export default function MediaPage() {
             Media Library
           </h1>
           <p className='text-slate-500 mt-1'>
-            Drag & drop or upload images. Stored on disk and served as static
-            files at{" "}
+            Images are securely hosted on Cloudinary CDN.
             <code className='px-1 py-0.5 bg-slate-100 rounded text-xs'>
               /uploads/&lt;id&gt;.&lt;ext&gt;
             </code>

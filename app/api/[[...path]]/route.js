@@ -1,3 +1,4 @@
+import { v2 as cloudinary } from "cloudinary";
 import { MongoClient } from "mongodb";
 import { v4 as uuidv4 } from "uuid";
 import { NextResponse } from "next/server";
@@ -5,7 +6,6 @@ import crypto from "crypto";
 import { handleAdminRoute } from "@/lib/admin/handlers";
 import { getContentMap, seedContentBlocks } from "@/lib/services";
 import { getDefaultsFromSchemas } from "@/lib/cms/schemas";
-import { v2 as cloudinary } from "cloudinary";
 
 // ────────────────────────────────────────────────────────────
 //  Maa Karma Devi Sangh Trust  •  API Routes
@@ -571,12 +571,12 @@ async function handleRoute(request, { params }) {
         );
       }
 
+      console.log("Cloudinary:", process.env.CLOUDINARY_CLOUD_NAME);
+
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
 
       const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
-
-      console.log("CLOUDINARY TEST", process.env.CLOUDINARY_CLOUD_NAME);
 
       const result = await cloudinary.uploader.upload(base64, {
         folder: "mkds-media",
@@ -603,7 +603,7 @@ async function handleRoute(request, { params }) {
       );
     }
 
-    return handleCORS(NextResponse.json({ error: `Route ${route} not found` }));
+    // return handleCORS(NextResponse.json({ error: `Route ${route} not found` }));
   } catch (error) {
     console.error("API Error:", error);
     return handleCORS(
