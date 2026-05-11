@@ -547,10 +547,6 @@ async function handleRoute(request, { params }) {
       return handleCORS(NextResponse.json({ success: true, contact: clean }));
     }
 
-    return handleCORS(
-      NextResponse.json({ error: `Route ${route} not found` }, { status: 404 }),
-    );
-
     // ── MEDIA UPLOAD ─────────────────────────────────────
     if (route === "/admin/media" && method === "POST") {
       const formData = await request.formData();
@@ -590,7 +586,7 @@ async function handleRoute(request, { params }) {
         createdAt: new Date(),
       };
 
-      const db = await getDb();
+      const db = await connectToMongo();
 
       const inserted = await db.collection("media").insertOne(mediaDoc);
 
@@ -603,7 +599,9 @@ async function handleRoute(request, { params }) {
       );
     }
 
-    // return handleCORS(NextResponse.json({ error: `Route ${route} not found` }));
+    return handleCORS(
+      NextResponse.json({ error: `Route ${route} not found` }, { status: 404 }),
+    );
   } catch (error) {
     console.error("API Error:", error);
     return handleCORS(

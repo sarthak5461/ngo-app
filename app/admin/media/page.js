@@ -11,7 +11,7 @@ import {
   Loader2,
   ImageIcon,
   Search,
-  CheckCircle2,
+  CheckCircle2,app
   X,
 } from "lucide-react";
 
@@ -138,10 +138,6 @@ export default function MediaPage() {
           </h1>
           <p className='text-slate-500 mt-1'>
             Images are securely hosted on Cloudinary CDN.
-            <code className='px-1 py-0.5 bg-slate-100 rounded text-xs'>
-              /uploads/&lt;id&gt;.&lt;ext&gt;
-            </code>
-            .
           </p>
         </div>
         <div className='flex items-center gap-2'>
