@@ -57,6 +57,8 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+console.log("CLOUDINARY TEST", process.env.CLOUDINARY_CLOUD_NAME);
+
 // ────────────────────────────────────────────────────────────
 //  RAZORPAY (MOCKED) — production swap-in instructions inline
 // ────────────────────────────────────────────────────────────
