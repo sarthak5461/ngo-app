@@ -240,16 +240,16 @@ export default function MediaPage() {
           <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 p-3'>
             {filtered.map((it) => {
               const src = it.url || it.dataUrl;
-              const isSelected = selected.has(it._id);
+              const isSelected = selected.has(it.id);
               return (
                 <Card
-                  key={it._id}
+                  key={it.id}
                   className={`border-0 shadow-sm overflow-hidden group transition relative ${isSelected ? "ring-2 ring-blue-500" : ""}`}
                 >
                   {/* Selection checkbox */}
                   <button
                     type='button'
-                    onClick={() => toggle(it._id)}
+                    onClick={() => toggle(it.id)}
                     className={`absolute top-2 left-2 z-10 w-6 h-6 rounded-full flex items-center justify-center transition ${isSelected ? "bg-blue-700 text-white" : "bg-white/90 backdrop-blur border border-slate-300 text-transparent hover:text-slate-300 group-hover:opacity-100 opacity-70"}`}
                     aria-label='Select'
                   >
@@ -274,7 +274,7 @@ export default function MediaPage() {
                         <Copy className='w-4 h-4 text-slate-700' />
                       </button>
                       <button
-                        onClick={() => remove(it._id)}
+                        onClick={() => remove(it.id)}
                         className='p-2 bg-white rounded-lg hover:bg-rose-50'
                         title='Delete'
                       >

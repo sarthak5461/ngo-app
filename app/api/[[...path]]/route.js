@@ -208,6 +208,28 @@ async function handleRoute(request, { params }) {
       );
     }
 
+    // ── MEDIA LIST ─────────────────────────────────────
+    if (route === "/admin/media" && method === "GET") {
+      const db = await connectToMongo();
+
+      const rows = await db
+        .collection("media")
+        .find({})
+        .sort({ createdAt: -1 })
+        .toArray();
+
+      const normalized = rows.map((item) => ({
+        ...item,
+        id: item._id.toString(),
+      }));
+
+      return handleCORS(
+        NextResponse.json({
+          rows: normalized,
+        }),
+      );
+    }
+
     // ── Delegate /admin/* to admin handlers (auth checked inside) ──
     if (route.startsWith("/admin/") || route === "/admin") {
       const res = await handleAdminRoute(request, route, method);
