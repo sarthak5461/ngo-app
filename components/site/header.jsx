@@ -30,14 +30,9 @@ export default function SiteHeader({ solid = false }) {
   const ctaHref = useContent("header.cta.href", "/membership");
   const ctaEnabled = useContent("header.cta.enabled", true);
   const navList = useContentList("header.nav", DEFAULT_NAV);
-  const NAV = (navList || []).filter(
-    (n) =>
-      n &&
-      n.label &&
-      (n.enabled === undefined || n.enabled).sort(
-        (a, b) => (a.order || 0) - (b.order || 0),
-      ),
-  );
+  const NAV = (navList || [])
+    .filter((n) => n && n.label && (n.enabled === undefined || n.enabled))
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
 
   useEffect(() => {
     if (solid) {
