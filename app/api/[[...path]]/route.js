@@ -57,8 +57,6 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-console.log("CLOUDINARY TEST", process.env.CLOUDINARY_CLOUD_NAME);
-
 // ────────────────────────────────────────────────────────────
 //  RAZORPAY (MOCKED) — production swap-in instructions inline
 // ────────────────────────────────────────────────────────────
@@ -577,6 +575,8 @@ async function handleRoute(request, { params }) {
       const buffer = Buffer.from(bytes);
 
       const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
+
+      console.log("CLOUDINARY TEST", process.env.CLOUDINARY_CLOUD_NAME);
 
       const result = await cloudinary.uploader.upload(base64, {
         folder: "mkds-media",
