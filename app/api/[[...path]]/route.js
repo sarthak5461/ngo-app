@@ -117,6 +117,56 @@ async function handleRoute(request, { params }) {
   try {
     const db = await connectToMongo();
 
+    // ── MEDIA UPLOAD ─────────────────────────────────────
+    if (route === "/admin/media" && method === "POST") {
+      const formData = await request.formData();
+      const file = formData.get("file");
+
+      if (!file) {
+        return handleCORS(
+          NextResponse.json({ error: "No file uploaded" }, { status: 400 }),
+        );
+      }
+
+      if (!file.type.startsWith("image/")) {
+        return handleCORS(
+          NextResponse.json(
+            { error: "Only image uploads allowed" },
+            { status: 400 },
+          ),
+        );
+      }
+
+      console.log("Cloudinary:", process.env.CLOUDINARY_CLOUD_NAME);
+
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
+
+      const result = await cloudinary.uploader.upload(base64, {
+        folder: "mkds-media",
+      });
+
+      const mediaDoc = {
+        name: file.name,
+        url: result.secure_url,
+        publicId: result.public_id,
+        size: file.size,
+        createdAt: new Date(),
+      };
+
+      const inserted = await db.collection("media").insertOne(mediaDoc);
+
+      return handleCORS(
+        NextResponse.json({
+          success: true,
+          id: inserted.insertedId,
+          ...mediaDoc,
+        }),
+      );
+    }
+
     // ── Delegate /admin/* to admin handlers (auth checked inside) ──
     if (route.startsWith("/admin/") || route === "/admin") {
       const res = await handleAdminRoute(request, route, method);
@@ -545,58 +595,6 @@ async function handleRoute(request, { params }) {
       await db.collection("contact_messages").insertOne(doc);
       const { _id, ...clean } = doc;
       return handleCORS(NextResponse.json({ success: true, contact: clean }));
-    }
-
-    // ── MEDIA UPLOAD ─────────────────────────────────────
-    if (route === "/admin/media" && method === "POST") {
-      const formData = await request.formData();
-      const file = formData.get("file");
-
-      if (!file) {
-        return handleCORS(
-          NextResponse.json({ error: "No file uploaded" }, { status: 400 }),
-        );
-      }
-
-      if (!file.type.startsWith("image/")) {
-        return handleCORS(
-          NextResponse.json(
-            { error: "Only image uploads allowed" },
-            { status: 400 },
-          ),
-        );
-      }
-
-      console.log("Cloudinary:", process.env.CLOUDINARY_CLOUD_NAME);
-
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-
-      const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
-
-      const result = await cloudinary.uploader.upload(base64, {
-        folder: "mkds-media",
-      });
-
-      const mediaDoc = {
-        name: file.name,
-        url: result.secure_url,
-        publicId: result.public_id,
-        size: file.size,
-        createdAt: new Date(),
-      };
-
-      const db = await connectToMongo();
-
-      const inserted = await db.collection("media").insertOne(mediaDoc);
-
-      return handleCORS(
-        NextResponse.json({
-          success: true,
-          id: inserted.insertedId,
-          ...mediaDoc,
-        }),
-      );
     }
 
     return handleCORS(
