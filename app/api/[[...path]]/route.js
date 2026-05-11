@@ -169,8 +169,17 @@ async function handleRoute(request, { params }) {
 
     // == MEDIA DELETE ----------------------------------------
 
-    if (route.startsWith("/admin/media") && method === "DELETE") {
-      const id = route.replace("/admin/media", "");
+    if (route.startsWith("/admin/media/") && method === "DELETE") {
+      const id = route.replace("/admin/media/", "");
+
+      // Validate ObjectId
+      if (!ObjectId.isValid(id)) {
+        return handleCORS(
+          NextResponse.json({ error: "Invalid media ID" }, { status: 400 }),
+        );
+      }
+
+      const db = await connectToMongo();
 
       const media = await db.collection("media").findOne({
         _id: new ObjectId(id),
@@ -182,19 +191,21 @@ async function handleRoute(request, { params }) {
         );
       }
 
-      // Delete image from cloudinary
-
+      // Delete from Cloudinary
       if (media.publicId) {
         await cloudinary.uploader.destroy(media.publicId);
       }
 
-      // Delte DB record
-
+      // Delete from MongoDB
       await db.collection("media").deleteOne({
         _id: new ObjectId(id),
       });
 
-      return handleCORS(NextResponse.json({ success: true }));
+      return handleCORS(
+        NextResponse.json({
+          success: true,
+        }),
+      );
     }
 
     // ── Delegate /admin/* to admin handlers (auth checked inside) ──
