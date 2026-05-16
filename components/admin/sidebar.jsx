@@ -27,7 +27,7 @@ const NAV = [
   { label: "Members", href: "/admin/members", icon: IdCard },
   { label: "Volunteers", href: "/admin/volunteers", icon: Users },
   { label: "CSR Inquiries", href: "/admin/csr", icon: Building2 },
-  { label: "Website Content", href: "/admin/content", icon: FileText },
+  { label: "Contacts", href: "/admin/contacts", icon: Building2 },
   { label: "Pages", href: "/admin/pages", icon: FileText },
   { label: "Media Library", href: "/admin/media", icon: ImageIcon },
   { label: "Reports", href: "/admin/reports", icon: FileBarChart },
