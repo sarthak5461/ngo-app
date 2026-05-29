@@ -28,6 +28,7 @@ export function useContentList(key, fallback = []) {
 
 export default function ContentProvider({ children, prefix = "" }) {
   const [content, setContent] = useState({});
+
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -40,12 +41,20 @@ export default function ContentProvider({ children, prefix = "" }) {
     })
       .then((r) => r.json())
       .then((d) => {
-        console.log("CONTENT API:", d);
         setContent(d.content || {});
         setLoaded(true);
       })
       .catch(() => setLoaded(true));
   }, [prefix]);
-  if (!loaded) return null;
-  return <Ctx.Provider value={{ content, loaded }}>{children}</Ctx.Provider>;
+
+  return (
+    <Ctx.Provider
+      value={{
+        content,
+        loaded,
+      }}
+    >
+      {children}
+    </Ctx.Provider>
+  );
 }

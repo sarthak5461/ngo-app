@@ -10,8 +10,6 @@ import { getDefaultsFromSchemas } from "@/lib/cms/schemas";
 
 export async function GET() {
   try {
-    await seedContentBlocks(getDefaultsFromSchemas());
-
     const rows = await listContentBlocks();
 
     return NextResponse.json({ rows });

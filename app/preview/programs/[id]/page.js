@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
 import SiteShell from "@/components/site/site-shell";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +32,7 @@ export async function generateMetadata({ params }) {
   const db = await getDb();
 
   const p = await db.collection(COLLECTIONS.programs).findOne({
-    "pageHeader.slug": params.slug,
+    id: params.id,
   });
 
   if (!p) {
@@ -52,18 +54,23 @@ export default async function ProgramDetail({ params }) {
   const db = await getDb();
 
   const p = await db.collection(COLLECTIONS.programs).findOne({
-    "pageHeader.slug": params.slug,
+    id: params.id,
   });
 
-  if (!p) {
-    notFound();
-  }
+  if (!p) notFound();
 
-  if (p.status !== "published") {
-    notFound();
-  }
+  const Icon = ICONS[p.hero?.icon];
 
-  const Icon = ICONS[p.hero?.icon] || ICONS.GraduationCap;
+  const otherPrograms = await db
+    .collection(COLLECTIONS.programs)
+    .find({
+      slug: {
+        $ne: p.pageHeader?.slug,
+      },
+    })
+    .limit(3)
+    .toArray();
+
   return (
     <SiteShell solidHeader={false}>
       {/* Hero */}

@@ -29,6 +29,7 @@ const NAV = [
   { label: "CSR Inquiries", href: "/admin/csr", icon: Building2 },
   { label: "Contacts", href: "/admin/contacts", icon: Building2 },
   { label: "Pages", href: "/admin/pages", icon: FileText },
+  { label: "Programs", href: "/admin/programs", icon: FileText },
   { label: "Media Library", href: "/admin/media", icon: ImageIcon },
   { label: "Reports", href: "/admin/reports", icon: FileBarChart },
   { label: "Settings", href: "/admin/settings", icon: Settings },

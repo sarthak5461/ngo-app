@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, HandHeart } from "lucide-react";
 import { useContent, useContentList } from "./content-provider";
+import { usePathname } from "next/navigation";
 
 const DEFAULT_NAV = [
   { label: "Home", href: "/", enabled: true },
@@ -30,10 +31,12 @@ export default function SiteHeader({ solid = false }) {
   const ctaHref = useContent("header.cta.href", "/membership");
   const ctaEnabled = useContent("header.cta.enabled", true);
   const navList = useContentList("header.nav", DEFAULT_NAV);
+  const pathname = usePathname();
   const NAV = (navList || [])
     .filter((n) => n && n.label && (n.enabled === undefined || n.enabled))
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
+  const isProgramPage = pathname.startsWith("/programs/");
   useEffect(() => {
     if (solid) {
       setScrolled(true);
@@ -95,13 +98,22 @@ export default function SiteHeader({ solid = false }) {
         </nav>
 
         <div className='flex items-center gap-2'>
-          {ctaEnabled && (
+          {isProgramPage ? (
             <Button
               asChild
-              className='hidden sm:inline-flex bg-blue-800 hover:bg-blue-900 text-white font-semibold shadow-md'
+              className='hidden sm:inline-flex bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-md'
             >
-              <Link href={ctaHref || "/membership"}>{ctaLabel}</Link>
+              <Link href='/donate'>Donate Now</Link>
             </Button>
+          ) : (
+            ctaEnabled && (
+              <Button
+                asChild
+                className='hidden sm:inline-flex bg-blue-800 hover:bg-blue-900 text-white font-semibold shadow-md'
+              >
+                <Link href={ctaHref || "/membership"}>{ctaLabel}</Link>
+              </Button>
+            )
           )}
           <button
             onClick={() => setMobileOpen(true)}
