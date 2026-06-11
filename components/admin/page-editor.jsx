@@ -181,6 +181,18 @@ function ListField({ value, onChange, itemFields, fallback }) {
                     onChange={(v) => setField(i, f.key, v)}
                     fallback=''
                   />
+                ) : f.type === "list" ? (
+                  <ListField
+                    value={it[f.key] || []}
+                    onChange={(v) => setField(i, f.key, v)}
+                    itemFields={f.itemFields}
+                    fallback={[]}
+                  />
+                ) : f.type === "richtext" ? (
+                  <RichTextEditor
+                    value={it[f.key] || ""}
+                    onChange={(v) => setField(i, f.key, v)}
+                  />
                 ) : (
                   <Input
                     value={it[f.key] || ""}
@@ -277,6 +289,7 @@ function Field({ field, value, onChange }) {
             fallback={field.fallback}
           />
         )}
+
         {field.type === "link" && (
           <Input
             type='url'
@@ -289,7 +302,7 @@ function Field({ field, value, onChange }) {
           <FileField value={value} onChange={onChange} />
         )}
         {field.type === "richtext" && (
-          <RichTextEditor value={value} onChange={onChange} />
+          <RichTextEditor value={value || ""} onChange={onChange} />
         )}
       </div>
     </div>

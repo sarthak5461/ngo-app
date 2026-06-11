@@ -17,39 +17,6 @@ import {
 import { IMG, NGO_FULL_NAME } from "@/lib/content";
 import { useContent } from "@/components/site/content-provider";
 
-const TRUSTEES = [
-  {
-    name: "Sri Bhagaban Mohanty",
-    role: "Founder & Chief Trustee",
-    bio: "Retired schoolmaster and lifelong devotee of Lord Jagannath. Founded the Trust in 2008.",
-  },
-  {
-    name: "Smt. Lata Mishra",
-    role: "Managing Trustee",
-    bio: "Former social welfare officer with the Government of Odisha. Leads programme strategy.",
-  },
-  {
-    name: "Sri Pratap Mohanty",
-    role: "Head of Disaster Operations",
-    bio: "Trained in NDRF protocols. Has led 14 cyclone and flood deployments.",
-  },
-  {
-    name: "Dr. Asha Patnaik",
-    role: "Environment Programme Director",
-    bio: "PhD in environmental science (Utkal University). Leads our climate-resilience initiatives.",
-  },
-  {
-    name: "Sri Manoj Pradhan",
-    role: "Education Coordinator",
-    bio: "Former librarian. Heads the village library and scholarship programme.",
-  },
-  {
-    name: "CA Sanjay Behera",
-    role: "Honorary Auditor",
-    bio: "Independent CA conducting our annual statutory audit since 2011.",
-  },
-];
-
 const ICONS = [Shield, Heart, Sparkles, Users];
 
 export default function AboutPage() {
@@ -115,6 +82,36 @@ export default function AboutPage() {
     typeof trusteesCardsRaw === "string"
       ? safeJSON(trusteesCardsRaw)
       : trusteesCardsRaw;
+
+  const volunteerHeadline = useContent(
+    "about.bottom_pane.headline",
+    "Be part of the next chapter.",
+  );
+
+  const volunteersubline = useContent(
+    "about.bottom_pane.subline",
+    "4 years of service. 4,200+ lives. We are just getting started.",
+  );
+
+  const volunteerProgBtn = useContent(
+    "about.bottom_pane.program_button_text",
+    "Explore Programms",
+  );
+
+  const volunteerProgBtnLink = useContent(
+    "about.bottom_pane.program_button_link",
+    "/programs",
+  );
+
+  const volunteerBtn = useContent(
+    "about.bottom_pane.vol_button_text",
+    "Volunteer with us",
+  );
+
+  const volunteerBtnLink = useContent(
+    "about.bottom_pane.vol_button_link",
+    "/#volunteer",
+  );
 
   return (
     <SiteShell solidHeader={false}>
@@ -294,10 +291,10 @@ export default function AboutPage() {
         <div className='container'>
           <Award className='w-12 h-12 text-amber-300 mx-auto mb-5' />
           <h2 className='font-[Playfair_Display] text-4xl font-bold mb-4'>
-            Be part of the next chapter.
+            {volunteerHeadline}
           </h2>
           <p className='text-white/85 max-w-xl mx-auto mb-8'>
-            17 years of service. 4,200+ lives. We are just getting started.
+            {volunteersubline}
           </p>
           <div className='flex flex-col sm:flex-row gap-3 justify-center'>
             <Button
@@ -305,8 +302,8 @@ export default function AboutPage() {
               size='lg'
               className='bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold h-12 px-7'
             >
-              <Link href='/programs'>
-                Explore Programs <ArrowRight className='w-4 h-4 ml-2' />
+              <Link href={volunteerProgBtnLink}>
+                {volunteerProgBtn} <ArrowRight className='w-4 h-4 ml-2' />
               </Link>
             </Button>
             <Button
@@ -315,8 +312,8 @@ export default function AboutPage() {
               variant='outline'
               className='bg-white/10 hover:bg-white/20 text-white border-white/40 h-12 px-7'
             >
-              <Link href='/#volunteer'>
-                <Users className='w-4 h-4 mr-2' /> Volunteer with us
+              <Link href={volunteerBtnLink}>
+                <Users className='w-4 h-4 mr-2' /> {volunteerBtn}
               </Link>
             </Button>
           </div>
