@@ -1,12 +1,26 @@
 import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
-
 import { getDb, COLLECTIONS } from "@/lib/db";
-
+import { validateEmail } from "@/lib/validators/email.server";
 export async function POST(request) {
   try {
     const body = await request.json();
     const db = await getDb();
+
+    const email = await validateEmail(body.email);
+
+    if (!email.valid) {
+      Response.json(
+        {
+          error: email.message,
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    body.email = email.email;
 
     const amount = parseInt(body.amount, 10);
 

@@ -27,13 +27,19 @@ export async function POST(request) {
   try {
     const { key, value } = await request.json();
 
-    if (!key) {
-      return NextResponse.json({ error: "key required" }, { status: 400 });
+    await setContentBlock(key, value, "Admin");
+
+    // Automatically update page timestamp
+    const parts = key.split(".");
+
+    if (parts.length >= 3) {
+      const pageKey = `${parts[0]}.${parts[1]}.updatedAt`;
+
+      await setContentBlock(pageKey, new Date().toISOString(), "System");
     }
-
-    const result = await setContentBlock(key, value, "Admin");
-
-    return NextResponse.json(result);
+    return NextResponse.json({
+      success: true,
+    });
   } catch (e) {
     console.error("CONTENT POST ERROR:", e);
 

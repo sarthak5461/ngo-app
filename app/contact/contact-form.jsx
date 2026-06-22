@@ -17,10 +17,20 @@ export default function ContactForm() {
   });
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [emailError, setEmailError] = useState("");
+
+  function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
 
   const submit = async (e) => {
-    e.preventDefault();
+    if (emailError) {
+      toast.error("Please correct the email address.");
+      return;
+    }
+
     setLoading(true);
+    e.preventDefault();
     try {
       const r = await fetch("/api/contact", {
         method: "POST",
@@ -72,14 +82,40 @@ export default function ContactForm() {
             </div>
             <div>
               <Label htmlFor='cemail'>Email *</Label>
+
               <Input
                 id='cemail'
                 type='email'
                 required
                 value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className='mt-1.5'
+                onChange={(e) => {
+                  const email = e.target.value;
+
+                  setForm({
+                    ...form,
+                    email,
+                  });
+
+                  if (!email) {
+                    setEmailError("");
+                  } else if (!validateEmail(email)) {
+                    setEmailError("Please enter a valid email address.");
+                  } else {
+                    setEmailError("");
+                  }
+                }}
+                className={`mt-1.5 ${
+                  emailError
+                    ? "border-red-500 focus-visible:ring-red-500"
+                    : form.email
+                      ? "border-emerald-500"
+                      : ""
+                }`}
               />
+
+              {emailError && (
+                <p className='mt-1 text-sm text-red-600'>{emailError}</p>
+              )}
             </div>
           </div>
           <div>

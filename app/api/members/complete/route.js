@@ -2,6 +2,7 @@ import { handleCORS } from "@/lib/cors";
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import crypto from "crypto";
+import { generateMemberId } from "@/lib/member-id";
 
 const MOCK_RAZORPAY_SECRET = "MOCK_DEMO_SECRET_DO_NOT_USE_IN_PROD";
 
@@ -41,6 +42,18 @@ export async function POST(request) {
       );
     }
     const member = await db.collection("members").findOne({ id });
+    if (member.status === "active") {
+      return handleCORS(
+        NextResponse.json(
+          {
+            error: "Membership already activated.",
+          },
+          {
+            status: 400,
+          },
+        ),
+      );
+    }
     if (!member)
       return handleCORS(
         NextResponse.json({ error: "Member not found" }, { status: 404 }),
@@ -66,23 +79,31 @@ export async function POST(request) {
       );
     }
 
-    const num = Math.floor(100000 + Math.random() * 900000);
-    const printedId = `MKDS-MEM-${num}`;
+    const { memberId, receiptNumber, sequence } = await generateMemberId();
     const validFrom = new Date();
     const validUntil = new Date(validFrom);
     validUntil.setFullYear(validUntil.getFullYear() + 1);
-    const receiptNumber = `MKDS/M/${validFrom.getFullYear()}/${num}`;
 
     await db.collection("members").updateOne(
       { id },
       {
         $set: {
-          memberId: printedId,
+          memberId,
+
+          memberSequence: sequence,
+
           paymentId,
-          status: "active",
-          validFrom,
-          validUntil,
+
           receiptNumber,
+
+          status: "active",
+
+          validFrom,
+
+          validUntil,
+
+          joinedAt: new Date(),
+
           updatedAt: new Date(),
         },
       },

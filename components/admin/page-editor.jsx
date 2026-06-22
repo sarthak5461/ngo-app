@@ -250,6 +250,9 @@ function safeJSON(v) {
 }
 
 function Field({ field, value, onChange }) {
+  if (field.type === "hidden") {
+    return null;
+  }
   return (
     <div>
       <Label className='text-sm font-semibold text-slate-800'>

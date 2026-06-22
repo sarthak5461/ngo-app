@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { handleCORS } from "@/lib/cors";
+import { validateEmail } from "@/lib/validators/email.server";
 
 import { getDb } from "@/lib/db";
 
@@ -9,6 +10,21 @@ const MOCK_RAZORPAY_KEY_ID = "rzp_test_MOCK_DEMO_KEY";
 export async function POST(request) {
   try {
     const body = await request.json();
+
+    const email = await validateEmail(body.email);
+
+    if (!email.valid) {
+      return Response.json(
+        {
+          error: email.message,
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    body.email = email.email;
 
     const db = await getDb();
     const amount = parseInt(body.amount, 10);

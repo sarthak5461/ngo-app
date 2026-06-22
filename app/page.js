@@ -37,29 +37,8 @@ import {
   CATEGORY_COLOR,
 } from "@/lib/content";
 import { useContent } from "@/components/site/content-provider";
-
+// import { validateEmail } from "@/lib/validators/email.client";
 const ICONS = { GraduationCap, LifeBuoy, Leaf, Stethoscope };
-
-const TESTIMONIALS = [
-  {
-    name: "Sushila Devi",
-    role: "Mother, Bhubaneswar",
-    quote:
-      "When the cyclone took our home, the Trust's volunteers reached us before anyone else. They gave us food, medicines and hope.",
-  },
-  {
-    name: "Rajesh Mahapatra",
-    role: "School Principal, Cuttack",
-    quote:
-      "Because of the scholarship programme, fourteen of my students returned to class this year. This is real, measurable change.",
-  },
-  {
-    name: "Anjali Sahu",
-    role: "Volunteer, Kolkata",
-    quote:
-      "I started by helping in one tree-plantation drive. Two years on, this Trust has become my family. Pure service, zero politics.",
-  },
-];
 
 // ────────────────────────────────────────────────────────────
 //  HERO
@@ -170,14 +149,16 @@ function About() {
     "home.about.headline",
     "A Trust born of devotion, grown by service.",
   );
-  const body1 = useContent(
-    "home.about.body1",
-    `Founded in 2008 in the holy land of Odisha, the Trust began as a small community kitchen serving the elderly and homeless near the temples of Puri.`,
-  );
-  const body2 = useContent(
-    "home.about.body2",
-    `Today, we are a pan-India movement working across four pillars — Education, Disaster Relief, Environment and Healthcare.`,
-  );
+
+  const aboutpara = useContent("home.about.content");
+
+  const aboutPointsRaw = useContent("home.about.points", []);
+
+  const aboutPoints =
+    typeof aboutPointsRaw === "string"
+      ? safeJSON(aboutPointsRaw)
+      : aboutPointsRaw;
+
   const image = useContent("home.about.image", IMG.about);
   const stat1Value = useContent("home.about.stat1.value", "17+");
   const stat1Label = useContent(
@@ -221,16 +202,23 @@ function About() {
           <h2 className='font-[Playfair_Display] text-4xl lg:text-5xl font-bold text-slate-900 mb-6 leading-tight'>
             {head} {tail && <span className='text-blue-800'>{tail}</span>}
           </h2>
-          <p className='text-slate-600 text-lg mb-4 leading-relaxed'>{body1}</p>
-          <p className='text-slate-600 text-lg mb-7 leading-relaxed'>{body2}</p>
+          <div
+            className="'text-slate-600 text-lg mb-4 leading-relaxed"
+            dangerouslySetInnerHTML={{
+              __html: aboutpara,
+            }}
+          />
 
           <div className='grid grid-cols-2 gap-4 mb-8'>
-            <div className='flex items-start gap-3'>
-              <CheckCircle2 className='w-5 h-5 text-emerald-600 mt-0.5 shrink-0' />
-              <span className='text-slate-700 text-sm'>
-                Registered Trust under Indian Trust Act 1882
-              </span>
-            </div>
+            {(aboutPoints || []).map((p) => {
+              return (
+                <div className='flex items-start gap-3'>
+                  <CheckCircle2 className='w-5 h-5 text-emerald-600 mt-0.5 shrink-0' />
+                  <span className='text-slate-700 text-sm'>{p.value}</span>
+                </div>
+              );
+            })}
+            {/* 
             <div className='flex items-start gap-3'>
               <CheckCircle2 className='w-5 h-5 text-emerald-600 mt-0.5 shrink-0' />
               <span className='text-slate-700 text-sm'>
@@ -248,7 +236,7 @@ function About() {
               <span className='text-slate-700 text-sm'>
                 Volunteers in 11 states across India
               </span>
-            </div>
+            </div> */}
           </div>
 
           <Button asChild className='gradient-trust text-white'>
@@ -619,8 +607,34 @@ function Gallery() {
 // ────────────────────────────────────────────────────────────
 //  BLOG TEASER
 // ────────────────────────────────────────────────────────────
-function BlogTeaser() {
-  const posts = BLOG_POSTS.slice(0, 3);
+
+async function BlogTeaser() {
+  const headline = useContent(
+    "home.blog.headline",
+    "Latest stories from the field.",
+  );
+
+  const [posts, setPosts] = useState([]);
+
+  useEffect(() => {
+    fetch("/api/blogs/featured")
+      .then((r) => r.json())
+      .then((d) => setPosts(d.rows || []))
+      .catch(() => {});
+  }, []);
+
+  function formatDate(date) {
+    if (!date) return "";
+
+    return new Date(date).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  }
+
+  // const posts = listBlogs();
+
   return (
     <section className='py-24 lg:py-28 bg-white'>
       <div className='container'>
@@ -633,7 +647,7 @@ function BlogTeaser() {
               From the Blog
             </Badge>
             <h2 className='font-[Playfair_Display] text-4xl lg:text-5xl font-bold text-slate-900'>
-              Latest stories from the field.
+              {headline}
             </h2>
           </div>
           <Button
@@ -648,37 +662,37 @@ function BlogTeaser() {
         </div>
         <div className='grid md:grid-cols-3 gap-6'>
           {posts.map((post) => (
-            <Link key={post.slug} href={`/blog/${post.slug}`} className='group'>
+            <Link
+              key={post.pageHeader?.slug}
+              href={`/blog/${post.pageHeader?.slug}`}
+              className='group'
+            >
               <Card className='border-0 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden h-full bg-white'>
                 <div className='relative h-52 overflow-hidden'>
                   <img
-                    src={post.image}
-                    alt={post.title}
+                    src={post.hero?.coverImage}
+                    alt={post.hero?.title}
                     className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
                   />
                 </div>
                 <CardContent className='p-6'>
                   <Badge
                     variant='secondary'
-                    className={`mb-3 ${CATEGORY_COLOR[post.category]}`}
+                    className={`mb-3 ${CATEGORY_COLOR[post.hero?.category]}`}
                   >
-                    {CATEGORY_LABEL[post.category]}
+                    {CATEGORY_LABEL[post.hero?.category]}
                   </Badge>
                   <h3 className='font-bold text-lg text-slate-900 mb-2 group-hover:text-blue-800 transition leading-snug'>
-                    {post.title}
+                    {post.hero?.title}
                   </h3>
                   <p className='text-sm text-slate-600 line-clamp-2 mb-4'>
-                    {post.excerpt}
+                    {post.hero?.excerpt}
                   </p>
                   <div className='flex items-center justify-between text-xs text-slate-500 pt-3 border-t'>
-                    <span>{post.author}</span>
+                    {/* <span>{post.author}</span> */}
                     <span className='flex items-center gap-1'>
                       <Calendar className='w-3 h-3' />{" "}
-                      {new Date(post.date).toLocaleDateString("en-IN", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })}
+                      {formatDate(post.publishedAt || post.createdAt)}
                     </span>
                   </div>
                 </CardContent>
@@ -695,6 +709,17 @@ function BlogTeaser() {
 //  TESTIMONIALS
 // ────────────────────────────────────────────────────────────
 function Testimonials() {
+  const headline = useContent(
+    "home.testimonials.headline",
+    "Stories from those we serve.",
+  );
+  const testimonialRawCards = useContent("home.testimonials.cards", []);
+
+  const testimonialCards =
+    typeof testimonialRawCards === "string"
+      ? safeJSON(testimonialRawCards)
+      : testimonialRawCards;
+
   return (
     <section className='py-24 lg:py-28 bg-slate-50'>
       <div className='container'>
@@ -706,32 +731,36 @@ function Testimonials() {
             Voices of Change
           </Badge>
           <h2 className='font-[Playfair_Display] text-4xl lg:text-5xl font-bold text-slate-900 mb-4'>
-            Stories from those we serve.
+            {headline}
           </h2>
         </div>
         <div className='grid md:grid-cols-3 gap-6'>
-          {TESTIMONIALS.map((t, i) => (
-            <Card
-              key={i}
-              className='border-0 shadow-md hover:shadow-lg transition bg-white'
-            >
-              <CardContent className='p-7'>
-                <Quote className='w-8 h-8 text-amber-500 mb-4' />
-                <p className='text-slate-700 italic leading-relaxed mb-6'>
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-                <div className='flex items-center gap-3 pt-4 border-t'>
-                  <div className='w-11 h-11 rounded-full gradient-trust text-white flex items-center justify-center font-bold'>
-                    {t.name.charAt(0)}
+          {(testimonialCards || [])
+            .filter((t) => t.visible !== false)
+            .map((t, i) => (
+              <Card
+                key={i}
+                className='border-0 shadow-md hover:shadow-lg transition bg-white'
+              >
+                <CardContent className='p-7'>
+                  <Quote className='w-8 h-8 text-amber-500 mb-4' />
+                  <p className='text-slate-700 italic leading-relaxed mb-6'>
+                    &ldquo;{t.comment}&rdquo;
+                  </p>
+                  <div className='flex items-center gap-3 pt-4 border-t'>
+                    <div className='w-11 h-11 rounded-full gradient-trust text-white flex items-center justify-center font-bold'>
+                      {t.name.charAt(0)}
+                    </div>
+                    <div>
+                      <div className='font-semibold text-slate-900'>
+                        {t.name}
+                      </div>
+                      <div className='text-sm text-slate-500'>{t.position}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className='font-semibold text-slate-900'>{t.name}</div>
-                    <div className='text-sm text-slate-500'>{t.role}</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            ))}
         </div>
       </div>
     </section>
@@ -752,6 +781,11 @@ function VolunteerSection() {
   });
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [emailError, setEmailError] = useState("");
+
+  function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
 
   const submit = async (e) => {
     e.preventDefault();
@@ -842,17 +876,41 @@ function VolunteerSection() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor='vemail'>Email *</Label>
+                    <Label htmlFor='m-em'>Email *</Label>
+
                     <Input
-                      id='vemail'
+                      id='m-em'
                       type='email'
                       required
                       value={form.email}
-                      onChange={(e) =>
-                        setForm({ ...form, email: e.target.value })
-                      }
-                      className='mt-1.5'
+                      onChange={(e) => {
+                        const email = e.target.value;
+
+                        setForm({
+                          ...form,
+                          email,
+                        });
+
+                        if (!email) {
+                          setEmailError("");
+                        } else if (!validateEmail(email)) {
+                          setEmailError("Please enter a valid email address.");
+                        } else {
+                          setEmailError("");
+                        }
+                      }}
+                      className={`mt-1.5 ${
+                        emailError
+                          ? "border-red-500 focus-visible:ring-red-500"
+                          : form.email
+                            ? "border-emerald-500"
+                            : ""
+                      }`}
                     />
+
+                    {emailError && (
+                      <p className='mt-1 text-sm text-red-600'>{emailError}</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor='vphone'>Phone</Label>

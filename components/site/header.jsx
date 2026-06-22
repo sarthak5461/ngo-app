@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, HandHeart } from "lucide-react";
 import { useContent, useContentList } from "./content-provider";
 import { usePathname } from "next/navigation";
+import DonationDialog from "@/components/site/donation-dialog";
 
 const DEFAULT_NAV = [
   { label: "Home", href: "/", enabled: true },
@@ -20,6 +21,7 @@ const DEFAULT_NAV = [
 export default function SiteHeader({ solid = false }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [donationOpen, setDonationOpen] = useState(false);
 
   const brandTitle = useContent("header.brand.name", "Maa Karma Devi");
   const brandSubtitle = useContent(
@@ -100,10 +102,10 @@ export default function SiteHeader({ solid = false }) {
         <div className='flex items-center gap-2'>
           {isProgramPage ? (
             <Button
-              asChild
+              onClick={() => setDonationOpen(true)}
               className='hidden sm:inline-flex bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-md'
             >
-              <Link href='/donate'>Donate Now</Link>
+              Donate Now
             </Button>
           ) : (
             ctaEnabled && (
@@ -115,6 +117,13 @@ export default function SiteHeader({ solid = false }) {
               </Button>
             )
           )}
+
+          <DonationDialog
+            open={donationOpen}
+            onOpenChange={setDonationOpen}
+            defaultCause='education'
+          />
+
           <button
             onClick={() => setMobileOpen(true)}
             className={`xl:hidden p-2 rounded-md ${isLight ? "text-slate-900" : "text-white"}`}

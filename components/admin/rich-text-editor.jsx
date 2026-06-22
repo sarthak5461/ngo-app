@@ -98,7 +98,21 @@ export default function RichTextEditor({ value, onChange }) {
         >
           Italic
         </button>
-
+        <button
+          type='button'
+          onClick={() =>
+            editor
+              .chain()
+              .focus()
+              .toggleHeading({
+                level: 1,
+              })
+              .run()
+          }
+          className='px-2 py-1 border rounded'
+        >
+          H1
+        </button>
         <button
           type='button'
           onClick={() =>
@@ -121,15 +135,14 @@ export default function RichTextEditor({ value, onChange }) {
               .chain()
               .focus()
               .toggleHeading({
-                level: 1,
+                level: 3,
               })
               .run()
           }
           className='px-2 py-1 border rounded'
         >
-          H1
+          H3
         </button>
-
         <button
           type='button'
           onClick={() => editor.chain().focus().toggleBulletList().run()}
