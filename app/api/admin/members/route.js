@@ -2,29 +2,24 @@ import { NextResponse } from "next/server";
 
 import { getDb, COLLECTIONS } from "@/lib/db";
 
-import { verifySessionToken, COOKIE_NAME } from "@/lib/auth/session";
-
-function getSessionFromHeaders(request) {
-  const cookieHeader = request.headers.get("cookie") || "";
-
-  const match = cookieHeader
-    .split(/;\s*/)
-    .find((c) => c.startsWith(`${COOKIE_NAME}=`));
-
-  if (!match) return null;
-
-  const token = match.split("=").slice(1).join("=");
-
-  return verifySessionToken(token);
-}
+import { requireAdmin } from "@/lib/auth/auth";
+import { PERMISSIONS, requirePermission } from "@/lib/auth/rbac";
 
 export async function GET(request) {
   try {
-    const session = getSessionFromHeaders(request);
+    const auth = await requireAdmin(request);
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+    if (!auth.success) {
+      return auth.response;
     }
+
+    const forbidden = requirePermission(auth.user, PERMISSIONS.MEMBERS_VIEW);
+
+    if (forbidden) {
+      return forbidden;
+    }
+
+    const user = auth.user;
 
     const db = await getDb();
 

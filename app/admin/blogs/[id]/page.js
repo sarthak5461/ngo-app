@@ -4,6 +4,18 @@ import RichTextEditor from "@/components/admin/rich-text-editor";
 import MediaPicker from "@/components/admin/media-picker";
 import { makeSlug } from "@/lib/utils/csv";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function BlogEditor({ params }) {
   const [blog, setBlog] = useState(null);
@@ -19,12 +31,52 @@ export default function BlogEditor({ params }) {
 
   return (
     <div className='max-w-5xl mx-auto p-6 space-y-6'>
-      {/* <Button
+      <Button
         type='button'
         onClick={() => window.open(`/blog/preview/${blog.id}`, "_blank")}
       >
         Preview
-      </Button> */}
+      </Button>
+
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant='destructive'>Delete</Button>
+        </AlertDialogTrigger>
+
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this blog?</AlertDialogTitle>
+
+            <AlertDialogDescription>
+              This action cannot be undone. The blog will be permanently
+              deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+
+            <AlertDialogAction
+              onClick={async () => {
+                const res = await fetch(`/api/admin/blogs/${params.id}`, {
+                  method: "DELETE",
+                });
+
+                if (!res.ok) {
+                  toast.error("Failed to delete blog");
+                  return;
+                }
+
+                toast.success("Blog deleted successfully");
+
+                window.location.href = "/admin/blogs";
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <input
         className='w-full border rounded p-3'

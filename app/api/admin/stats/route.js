@@ -1,28 +1,20 @@
 import { NextResponse } from "next/server";
 import { getDb, COLLECTIONS } from "@/lib/db";
-
-import { verifySessionToken, COOKIE_NAME } from "@/lib/auth/session";
-
-function getSessionFromHeaders(request) {
-  const cookieHeader = request.headers.get("cookie") || "";
-
-  const match = cookieHeader
-    .split(/;\s*/)
-    .find((c) => c.startsWith(`${COOKIE_NAME}=`));
-
-  if (!match) return null;
-
-  const token = match.split("=").slice(1).join("=");
-
-  return verifySessionToken(token);
-}
+import { requireAdmin } from "@/lib/auth/auth";
 
 export async function GET(request) {
   try {
-    const session = getSessionFromHeaders(request);
+    const user = await requireAdmin(request);
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+    if (!user) {
+      return NextResponse.json(
+        {
+          error: "Unauthorized",
+        },
+        {
+          status: 401,
+        },
+      );
     }
 
     const db = await getDb();
@@ -30,13 +22,9 @@ export async function GET(request) {
     const [donations, activeMembers, volunteerCount, contactCount, csrCount] =
       await Promise.all([
         db.collection(COLLECTIONS.donations).find({}).toArray(),
-
         db.collection(COLLECTIONS.members).countDocuments(),
-
         db.collection(COLLECTIONS.volunteers).countDocuments(),
-
         db.collection(COLLECTIONS.contacts).countDocuments(),
-
         db.collection(COLLECTIONS.csrInquiries).countDocuments(),
       ]);
 
@@ -49,19 +37,12 @@ export async function GET(request) {
 
     return NextResponse.json({
       totalRaised,
-
       donationCount,
-
       activeMembers,
-
       pendingMembers: 0,
-
       volunteerCount,
-
       csrCount,
-
       contactCount,
-
       memberContributions: activeMembers * 500,
     });
   } catch (error) {
@@ -71,7 +52,9 @@ export async function GET(request) {
       {
         error: "Failed to fetch admin stats",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }

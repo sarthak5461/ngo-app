@@ -5,8 +5,23 @@ import cloudinary from "@/lib/cloudinary";
 import { getDb, COLLECTIONS } from "@/lib/db";
 import { handleCORS } from "@/lib/cors";
 
+import { requireAdmin } from "@/lib/auth/auth";
+import { requirePermission, PERMISSIONS } from "@/lib/auth/rbac";
+
 export async function DELETE(request, { params }) {
   try {
+    const auth = await requireAdmin(request);
+
+    if (!auth.success) {
+      return auth.response;
+    }
+
+    const forbidden = requirePermission(auth.user, PERMISSIONS.MEDIA_UPLOAD);
+
+    if (forbidden) {
+      return forbidden;
+    }
+
     const id = params.id;
 
     if (!ObjectId.isValid(id)) {

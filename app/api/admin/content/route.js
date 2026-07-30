@@ -7,9 +7,25 @@ import {
 } from "@/lib/services";
 
 import { getDefaultsFromSchemas } from "@/lib/cms/schemas";
+import { requireAdmin } from "@/lib/auth/auth";
+import { PERMISSIONS, requirePermission } from "@/lib/auth/rbac";
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const auth = await requireAdmin(request);
+
+    if (!auth.success) {
+      return auth.response;
+    }
+
+    const forbidden = requirePermission(auth.user, PERMISSIONS.CONTENT_VIEW);
+
+    if (forbidden) {
+      return forbidden;
+    }
+
+    const user = auth.user;
+
     const rows = await listContentBlocks();
 
     return NextResponse.json({ rows });
@@ -26,6 +42,20 @@ export async function GET() {
 export async function POST(request) {
   try {
     const { key, value } = await request.json();
+
+    const auth = await requireAdmin(request);
+
+    if (!auth.success) {
+      return auth.response;
+    }
+
+    const forbidden = requirePermission(auth.user, PERMISSIONS.CONTENT_VIEW);
+
+    if (forbidden) {
+      return forbidden;
+    }
+
+    const user = auth.user;
 
     await setContentBlock(key, value, "Admin");
 

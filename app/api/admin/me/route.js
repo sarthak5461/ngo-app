@@ -1,39 +1,49 @@
 import { NextResponse } from "next/server";
-
-import { verifySessionToken, COOKIE_NAME } from "@/lib/auth/session";
-
-function getSessionFromHeaders(request) {
-  const cookieHeader = request.headers.get("cookie") || "";
-
-  const match = cookieHeader
-    .split(/;\s*/)
-    .find((c) => c.startsWith(`${COOKIE_NAME}=`));
-
-  if (!match) return null;
-
-  const token = match.split("=").slice(1).join("=");
-
-  return verifySessionToken(token);
-}
+import { verifyAccessToken } from "@/lib/auth/jwt";
 
 export async function GET(request) {
   try {
-    const session = getSessionFromHeaders(request);
+    const token = request.cookies.get("mkds_token")?.value;
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+    if (!token) {
+      return NextResponse.json(
+        {
+          error: "Unauthorized",
+        },
+        {
+          status: 401,
+        },
+      );
+    }
+
+    const user = await verifyAccessToken(token);
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          error: "Unauthorized",
+        },
+        {
+          status: 401,
+        },
+      );
     }
 
     return NextResponse.json({
-      role: session.role,
-      name: session.name,
+      email: user.email,
+      role: user.role,
+      userId: user.userId,
     });
   } catch (error) {
     console.error("ME ERROR:", error);
 
     return NextResponse.json(
-      { error: "Failed to fetch session" },
-      { status: 500 },
+      {
+        error: "Failed to fetch user",
+      },
+      {
+        status: 500,
+      },
     );
   }
 }

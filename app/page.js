@@ -174,7 +174,7 @@ function About() {
   const head = words.join(" ");
 
   return (
-    <section id='about' className='py-24 lg:py-32 bg-white'>
+    <section id='about' className='py-16 lg:py-16 bg-white'>
       <div className='container grid lg:grid-cols-2 gap-12 lg:gap-20 items-center'>
         <div className='relative'>
           <img
@@ -218,25 +218,6 @@ function About() {
                 </div>
               );
             })}
-            {/* 
-            <div className='flex items-start gap-3'>
-              <CheckCircle2 className='w-5 h-5 text-emerald-600 mt-0.5 shrink-0' />
-              <span className='text-slate-700 text-sm'>
-                12A &amp; 80G certified
-              </span>
-            </div>
-            <div className='flex items-start gap-3'>
-              <CheckCircle2 className='w-5 h-5 text-emerald-600 mt-0.5 shrink-0' />
-              <span className='text-slate-700 text-sm'>
-                Audited financials, public annual report
-              </span>
-            </div>
-            <div className='flex items-start gap-3'>
-              <CheckCircle2 className='w-5 h-5 text-emerald-600 mt-0.5 shrink-0' />
-              <span className='text-slate-700 text-sm'>
-                Volunteers in 11 states across India
-              </span>
-            </div> */}
           </div>
 
           <Button asChild className='gradient-trust text-white'>
@@ -274,7 +255,7 @@ function Programs() {
   );
 
   return (
-    <section id='programs' className='py-24 lg:py-32 bg-slate-50'>
+    <section id='programs' className='py-16 lg:py-16 bg-slate-50'>
       <div className='container'>
         <div className='text-center max-w-2xl mx-auto mb-16'>
           <Badge
@@ -412,7 +393,7 @@ function Impact() {
   return (
     <section
       id='impact'
-      className='py-24 lg:py-28 gradient-trust text-white relative overflow-hidden'
+      className='py-16 lg:py-16 gradient-trust text-white relative overflow-hidden'
     >
       <div
         className='absolute inset-0 opacity-10'
@@ -492,17 +473,8 @@ function Transparency() {
     Building2,
   };
 
-  // const items = [
-  //   { stat: "87.4%", label: "Of every rupee reaches the field", icon: Shield },
-  //   {
-  //     stat: "CA-audited",
-  //     label: "Independent annual audit since 2011",
-  //     icon: Award,
-  //   },
-  //   { stat: "Public", label: "Annual report — free download", icon: Building2 },
-  // ];
   return (
-    <section className='py-24 lg:py-28 bg-white'>
+    <section className='py-16 lg:py-16 bg-white'>
       <div className='container max-w-5xl'>
         <div className='text-center max-w-2xl mx-auto mb-14'>
           <Badge
@@ -571,7 +543,7 @@ function Gallery() {
   const gallery =
     typeof rawGallery === "string" ? safeJSON(rawGallery) : rawGallery;
   return (
-    <section id='gallery' className='py-24 lg:py-28 bg-slate-50'>
+    <section id='gallery' className='py-16 lg:py-16 bg-slate-50'>
       <div className='container'>
         <div className='text-center max-w-2xl mx-auto mb-14'>
           <Badge
@@ -636,7 +608,7 @@ async function BlogTeaser() {
   // const posts = listBlogs();
 
   return (
-    <section className='py-24 lg:py-28 bg-white'>
+    <section className='py-16 lg:py-16 bg-white'>
       <div className='container'>
         <div className='flex items-end justify-between mb-12 flex-wrap gap-4'>
           <div>
@@ -721,7 +693,7 @@ function Testimonials() {
       : testimonialRawCards;
 
   return (
-    <section className='py-24 lg:py-28 bg-slate-50'>
+    <section className='py-16 lg:py-16 bg-slate-50'>
       <div className='container'>
         <div className='text-center max-w-2xl mx-auto mb-14'>
           <Badge
@@ -808,7 +780,7 @@ function VolunteerSection() {
   };
 
   return (
-    <section id='volunteer' className='py-24 lg:py-28 bg-white'>
+    <section id='volunteer' className='py-16 lg:py-16 bg-white'>
       <div className='container grid lg:grid-cols-2 gap-12 items-center'>
         <div>
           <Badge

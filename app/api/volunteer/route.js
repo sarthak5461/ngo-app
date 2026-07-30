@@ -8,20 +8,16 @@ export async function POST(request) {
   try {
     const body = await request.json();
 
-    const email = await validateEmail(body.email);
-
-    if (!email.valid) {
-      Response.json(
+    if (!validateEmail(body.email)) {
+      return NextResponse.json(
         {
-          error: email.message,
+          error: "Invalid email address",
         },
         {
           status: 400,
         },
       );
     }
-
-    body.email = email.email;
 
     if (!body.name || !body.email) {
       return NextResponse.json(
@@ -45,11 +41,9 @@ export async function POST(request) {
 
     await db.collection(COLLECTIONS.volunteers).insertOne(doc);
 
-    const { _id, ...clean } = doc;
-
     return NextResponse.json({
       success: true,
-      volunteer: clean,
+      volunteer: doc,
     });
   } catch (error) {
     console.error("VOLUNTEER ERROR:", error);

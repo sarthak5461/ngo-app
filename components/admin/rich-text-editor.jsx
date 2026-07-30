@@ -1,11 +1,43 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useEditor, EditorContent, extensions } from "@tiptap/react";
+import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
-import Image from "@tiptap/extension-image";
+import CustomImage from "@/lib/tiptap/extensions/CustomImage";
 import MediaPicker from "./media-picker";
+import LinkDialog from "@/components/editor/LinkDialog";
+import {
+  Bold,
+  Italic,
+  Heading1,
+  Heading2,
+  Heading3,
+  List,
+  ListOrdered,
+  Link2,
+  Quote,
+  ImagePlus,
+  Code2,
+} from "lucide-react";
+
+function ToolbarButton({ icon: Icon, active, onClick, title }) {
+  return (
+    <button
+      type='button'
+      title={title}
+      onClick={onClick}
+      className={`flex h-9 w-9 items-center justify-center rounded-md transition-all
+      ${
+        active
+          ? "bg-blue-600 text-white shadow-sm"
+          : "hover:bg-gray-100 text-gray-700"
+      }`}
+    >
+      <Icon size={18} />
+    </button>
+  );
+}
 
 export default function RichTextEditor({ value, onChange }) {
   const editor = useEditor({
@@ -27,7 +59,7 @@ export default function RichTextEditor({ value, onChange }) {
         autolink: true,
         defaultProtocol: "https",
       }),
-      Image.configure({
+      CustomImage.configure({
         inline: true,
         resize: {
           enabled: true,
@@ -58,135 +90,120 @@ export default function RichTextEditor({ value, onChange }) {
   const [showHtmlEditor, setShowHtmlEditor] = useState(false);
 
   const [htmlDraft, setHtmlDraft] = useState("");
-  const setLink = () => {
-    const previousUrl = editor.getAttributes("link").href;
 
-    const url = window.prompt("Enter URL or Email", previousUrl || "");
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
+  const [linkUrl, setLinkUrl] = useState(false);
+  const [linkNewTab, setLinkNewTab] = useState(false);
 
-    if (url === null) return;
+  // const setLink = () => {
+  //   const previousUrl = editor.getAttributes("link").href;
 
-    if (url === "") {
-      editor.chain().focus().unsetLink().run();
-      return;
-    }
+  //   const url = window.prompt("Enter URL or Email", previousUrl || "");
 
-    let href = url.trim();
+  //   if (url === null) return;
 
-    // Email
-    if (href.includes("@") && !href.startsWith("mailto:")) {
-      href = `mailto:${href}`;
-    }
+  //   if (url === "") {
+  //     editor.chain().focus().unsetLink().run();
+  //     return;
+  //   }
 
-    editor.chain().focus().setLink({ href }).run();
-  };
+  //   let href = url.trim();
+
+  //   // Email
+  //   if (href.includes("@") && !href.startsWith("mailto:")) {
+  //     href = `mailto:${href}`;
+  //   }
+
+  //   editor.chain().focus().setLink({ href }).run();
+  // };
 
   return (
     <div className='ProseMirror border rounded-xl overflow-hidden bg-white'>
-      <div className='border-b p-2 flex gap-2 flex-wrap'>
-        <button
-          type='button'
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          className='px-2 py-1 border rounded'
-        >
-          Bold
-        </button>
+      <div className='border-b bg-gray-50 px-3 py-2 flex flex-wrap items-center gap-1'>
+        <div className='w-px h-6 bg-gray-300 mx-1' />
+        <ToolbarButton
+          icon={Bold}
+          title='Bold'
+          active={editor?.isActive("bold")}
+          onClick={() => editor?.chain().focus().toggleBold().run()}
+        />
 
-        <button
-          type='button'
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          className='px-2 py-1 border rounded'
-        >
-          Italic
-        </button>
-        <button
-          type='button'
+        <ToolbarButton
+          icon={Italic}
+          title='Italic'
+          active={editor?.isActive("italic")}
+          onClick={() => editor?.chain().focus().toggleItalic().run()}
+        />
+        <ToolbarButton
+          icon={Heading1}
+          title='Heading 1'
+          active={editor?.isActive("heading", { level: 1 })}
           onClick={() =>
-            editor
-              .chain()
-              .focus()
-              .toggleHeading({
-                level: 1,
-              })
-              .run()
+            editor?.chain().focus().toggleHeading({ level: 1 }).run()
           }
-          className='px-2 py-1 border rounded'
-        >
-          H1
-        </button>
-        <button
-          type='button'
+        />
+        <ToolbarButton
+          icon={Heading2}
+          title='Heading 2'
+          active={editor?.isActive("heading", { level: 2 })}
           onClick={() =>
-            editor
-              .chain()
-              .focus()
-              .toggleHeading({
-                level: 2,
-              })
-              .run()
+            editor?.chain().focus().toggleHeading({ level: 2 }).run()
           }
-          className='px-2 py-1 border rounded'
-        >
-          H2
-        </button>
-        <button
-          type='button'
+        />
+        <ToolbarButton
+          icon={Heading3}
+          title='Heading 3'
+          active={editor?.isActive("heading", { level: 3 })}
           onClick={() =>
-            editor
-              .chain()
-              .focus()
-              .toggleHeading({
-                level: 3,
-              })
-              .run()
+            editor?.chain().focus().toggleHeading({ level: 3 }).run()
           }
-          className='px-2 py-1 border rounded'
-        >
-          H3
-        </button>
-        <button
-          type='button'
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className='px-2 py-1 border rounded'
-        >
-          List
-        </button>
+        />
+        <ToolbarButton
+          icon={List}
+          title='Bullet List'
+          active={editor?.isActive("bulletList")}
+          onClick={() => editor?.chain().focus().toggleBulletList().run()}
+        />
 
-        <button
-          type='button'
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className='px-2 py-1 border rounded'
-        >
-          Numbered
-        </button>
-        <button
-          type='button'
-          onClick={setLink}
-          className='px-2 py-1 border rounded'
-        >
-          Link
-        </button>
-        <button
-          type='button'
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          className='px-2 py-1 border rounded'
-        >
-          Quote
-        </button>
-        <button type='button' onClick={() => setMediaPickerOpen(true)}>
-          Image
-        </button>
+        <ToolbarButton
+          icon={ListOrdered}
+          title='Numbered List'
+          active={editor?.isActive("orderedList")}
+          onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+        />
+        <ToolbarButton
+          icon={Link2}
+          title='Insert Link'
+          active={editor?.isActive("link")}
+          onClick={() => {
+            const attrs = editor.getAttributes("link");
+            setLinkUrl(attrs.href || "");
+            setLinkNewTab(attrs.target === "_blank");
+            setShowLinkDialog(true);
+          }}
+        />
+        <ToolbarButton
+          icon={Quote}
+          title='Quote'
+          active={editor?.isActive("blockquote")}
+          onClick={() => editor?.chain().focus().toggleBlockquote().run()}
+        />
+        <ToolbarButton
+          icon={ImagePlus}
+          title='Insert Image'
+          active={false}
+          onClick={() => setMediaPickerOpen(true)}
+        />
 
-        <button
-          type='button'
+        <ToolbarButton
+          icon={Code2}
+          title='Edit HTML'
+          active={showHtmlEditor}
           onClick={() => {
             setHtmlDraft(editor?.getHTML() || "");
-
             setShowHtmlEditor(true);
           }}
-          className='px-2 py-1 border rounded'
-        >
-          HTML
-        </button>
+        />
         <MediaPicker
           open={mediaPickerOpen}
           onClose={() => setMediaPickerOpen(false)}
@@ -202,7 +219,7 @@ export default function RichTextEditor({ value, onChange }) {
         />
       </div>
       <div className='min-h-[500px]'>
-        <EditorContent editor={editor} className='prose max-w-none p-3' />
+        <EditorContent editor={editor} className='max-w-none p-3' />
         {showHtmlEditor && (
           <div className='fixed inset-0 z-50 bg-black/50 flex items-center justify-center'>
             <div className='bg-white rounded-xl w-[90vw] max-w-5xl h-[80vh] shadow-2xl flex flex-col'>
@@ -243,6 +260,55 @@ export default function RichTextEditor({ value, onChange }) {
           </div>
         )}
       </div>
+      <LinkDialog
+        open={showLinkDialog}
+        url={linkUrl}
+        setUrl={setLinkUrl}
+        newTab={linkNewTab}
+        setNewTab={setLinkNewTab}
+        onCancel={() => {
+          setShowLinkDialog(false);
+          setLinkUrl("");
+          setLinkNewTab(false);
+        }}
+        onRemove={() => {
+          editor?.chain().focus().extendMarkRange("link").unsetLink().run();
+
+          setShowLinkDialog(false);
+        }}
+        onSave={() => {
+          let href = linkUrl.trim();
+
+          if (!href) return;
+
+          // Email
+          if (href.includes("@") && !href.startsWith("mailto:")) {
+            href = `mailto:${href}`;
+          }
+
+          // Website
+          else if (
+            !href.startsWith("http://") &&
+            !href.startsWith("https://") &&
+            !href.startsWith("/")
+          ) {
+            href = `https://${href}`;
+          }
+
+          editor
+            ?.chain()
+            .focus()
+            .extendMarkRange("link")
+            .setLink({
+              href,
+              target: linkNewTab ? "_blank" : null,
+            })
+            .run();
+
+          setShowLinkDialog(false);
+        }}
+      />
+      ;
     </div>
   );
 }

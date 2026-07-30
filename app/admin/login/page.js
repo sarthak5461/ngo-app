@@ -13,6 +13,7 @@ function AdminLoginContent() {
   const router = useRouter();
   const params = useSearchParams();
 
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -31,14 +32,17 @@ function AdminLoginContent() {
       const r = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({
+          email,
+          password,
+        }),
       });
 
       const d = await r.json();
 
       if (!r.ok) throw new Error(d.error);
 
-      toast.success(`Welcome, ${d.name}`);
+      toast.success(`Welcome, ${d.email}`);
 
       router.push(params.get("next") || "/admin");
       router.refresh();
@@ -76,6 +80,21 @@ function AdminLoginContent() {
         <CardContent className='p-7'>
           <form onSubmit={submit} className='space-y-4'>
             <div>
+              <Label htmlFor='email'>Email</Label>
+
+              <Input
+                id='email'
+                type='email'
+                required
+                autoComplete='email'
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder='admin@trust.org'
+                className='mt-1.5'
+              />
+            </div>
+
+            <div>
               <Label htmlFor='pw'>Admin password</Label>
 
               <div className='relative mt-1.5'>
@@ -92,14 +111,6 @@ function AdminLoginContent() {
                   autoFocus
                 />
               </div>
-
-              <p className='text-[11px] text-slate-500 mt-1.5'>
-                Default development password:{" "}
-                <code className='bg-slate-100 px-1.5 py-0.5 rounded'>
-                  admin123
-                </code>{" "}
-                (change in <code>.env</code> for production)
-              </p>
             </div>
 
             <Button

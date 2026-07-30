@@ -43,12 +43,30 @@ export default function RichText({ content, html, className = "" }) {
         );
       }
       if (domNode.name === "img") {
+        const width = domNode.attribs.width;
+        const align = domNode.attribs["data-align"] || "center";
+
         return (
-          <img
-            src={domNode.attribs.src}
-            alt={domNode.attribs.alt || ""}
-            className='rounded-xl my-6 w-full'
-          />
+          <div
+            className={`my-8 flex ${
+              align === "left"
+                ? "justify-start"
+                : align === "right"
+                  ? "justify-end"
+                  : "justify-center"
+            }`}
+          >
+            <img
+              src={domNode.attribs.src}
+              alt={domNode.attribs.alt || ""}
+              style={{
+                width: width ? `${width}px` : "100%",
+                maxWidth: "100%",
+                height: "auto",
+              }}
+              className='rounded-xl shadow-lg'
+            />
+          </div>
         );
       }
     },

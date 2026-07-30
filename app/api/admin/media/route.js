@@ -2,9 +2,23 @@ import { NextResponse } from "next/server";
 import cloudinary from "@/lib/cloudinary";
 import { getDb, COLLECTIONS } from "@/lib/db";
 import { handleCORS } from "@/lib/cors";
+import { requireAdmin } from "@/lib/auth/auth";
+import { requirePermission, PERMISSIONS } from "@/lib/auth/rbac";
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const auth = await requireAdmin(request);
+
+    if (!auth.success) {
+      return auth.response;
+    }
+
+    const forbidden = requirePermission(auth.user, PERMISSIONS.MEDIA_VIEW);
+
+    if (forbidden) {
+      return forbidden;
+    }
+
     const db = await getDb();
 
     const rows = await db
@@ -39,6 +53,21 @@ export async function GET() {
 
 export async function POST(request) {
   try {
+    const auth = await requireAdmin(request);
+
+    if (!auth.success) {
+      return auth.response;
+    }
+
+    const forbidden = auth.requirePermission(
+      auth.user,
+      PERMISSIONS.MEDIA_UPLOAD,
+    );
+
+    if (forbidden) {
+      return forbidden;
+    }
+
     const formData = await request.formData();
     const file = formData.get("file");
 
