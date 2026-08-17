@@ -1,4 +1,5 @@
 "use client";
+import { useRef } from "react";
 import { createContext, useContext, useEffect, useState } from "react";
 
 const Ctx = createContext({ content: {}, loaded: false });
@@ -27,6 +28,8 @@ export function useContentList(key, fallback = []) {
 }
 
 export default function ContentProvider({ children, prefix = "" }) {
+  const instanceId = useRef(Math.random().toString(36).substring(2, 8));
+
   const [content, setContent] = useState({});
 
   const [loaded, setLoaded] = useState(false);

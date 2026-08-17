@@ -31,13 +31,10 @@ import SiteShell from "@/components/site/site-shell";
 import {
   IMG,
   NGO_FULL_NAME,
-  PROGRAMS,
-  BLOG_POSTS,
   CATEGORY_LABEL,
   CATEGORY_COLOR,
 } from "@/lib/content";
 import { useContent } from "@/components/site/content-provider";
-// import { validateEmail } from "@/lib/validators/email.client";
 const ICONS = { GraduationCap, LifeBuoy, Leaf, Stethoscope };
 
 // ────────────────────────────────────────────────────────────
@@ -210,9 +207,9 @@ function About() {
           />
 
           <div className='grid grid-cols-2 gap-4 mb-8'>
-            {(aboutPoints || []).map((p) => {
+            {(aboutPoints || []).map((p, i) => {
               return (
-                <div className='flex items-start gap-3'>
+                <div key={i} className='flex items-start gap-3'>
                   <CheckCircle2 className='w-5 h-5 text-emerald-600 mt-0.5 shrink-0' />
                   <span className='text-slate-700 text-sm'>{p.value}</span>
                 </div>
@@ -580,7 +577,7 @@ function Gallery() {
 //  BLOG TEASER
 // ────────────────────────────────────────────────────────────
 
-async function BlogTeaser() {
+function BlogTeaser() {
   const headline = useContent(
     "home.blog.headline",
     "Latest stories from the field.",

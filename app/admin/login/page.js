@@ -40,9 +40,11 @@ function AdminLoginContent() {
 
       const d = await r.json();
 
+      console.log("LOGIN RESPONSE:", d);
+
       if (!r.ok) throw new Error(d.error);
 
-      toast.success(`Welcome, ${d.email}`);
+      toast.success(`Welcome, ${d.user.name}`);
 
       router.push(params.get("next") || "/admin");
       router.refresh();

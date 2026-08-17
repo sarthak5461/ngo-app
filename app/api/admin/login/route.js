@@ -102,10 +102,13 @@ export async function POST(request) {
     const response = NextResponse.json({
       ok: true,
       user: {
+        name: user.name,
         email: user.email,
         role: user.role,
       },
     });
+
+    // console.log(response);
 
     response.cookies.set({
       name: "mkds_token",

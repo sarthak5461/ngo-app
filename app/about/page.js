@@ -14,7 +14,7 @@ import {
   Users,
   ArrowRight,
 } from "lucide-react";
-import { IMG, NGO_FULL_NAME } from "@/lib/content";
+import { IMG } from "@/lib/content";
 import { useContent } from "@/components/site/content-provider";
 
 const ICONS = [Shield, Heart, Sparkles, Users];

@@ -18,7 +18,7 @@ export async function GET(request) {
       return auth.response;
     }
 
-    const forbidden = requirePermission(auth.user, PERMISSIONS.CONTENT_VIEW);
+    const forbidden = requirePermission(auth.user, PERMISSIONS.CONTENT_EDIT);
 
     if (forbidden) {
       return forbidden;
