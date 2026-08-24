@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import { getDb, COLLECTIONS } from "@/lib/db";
 import { validateEmail } from "@/lib/validators/email.client";
+import { sendVolunteerNotification } from "@/lib/email/volunteer-email";
 
 export async function POST(request) {
   try {
@@ -40,6 +41,12 @@ export async function POST(request) {
     };
 
     await db.collection(COLLECTIONS.volunteers).insertOne(doc);
+
+    try {
+      await sendVolunteerNotification(doc);
+    } catch (emailError) {
+      console.error("VOLUNTEER EMAIL ERROR:", emailError);
+    }
 
     return NextResponse.json({
       success: true,

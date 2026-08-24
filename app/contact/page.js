@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Mail, Phone, MapPin, Clock } from "lucide-react";
 import { useContent } from "@/components/site/content-provider";
 
-export default function ContactPage() {
+function ContactPageContent() {
   const heroHeadline = useContent("contact.hero.headline");
   const herosubline = useContent("contact.hero.subline");
 
@@ -74,6 +74,14 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
+    </SiteShell>
+  );
+}
+
+export default function ContactPage() {
+  return (
+    <SiteShell>
+      <ContactPageContent />
     </SiteShell>
   );
 }

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { getDb } from "@/lib/db";
 import crypto from "crypto";
+import { sendDonationNotification } from "@/lib/email/donation-email";
 
 const MOCK_RAZORPAY_SECRET = "MOCK_DEMO_SECRET_DO_NOT_USE_IN_PROD";
 
@@ -91,6 +92,12 @@ export async function POST(request) {
     await db
       .collection("donation_orders")
       .updateOne({ orderId }, { $set: { status: "paid", paidAt: new Date() } });
+
+    try {
+      await sendDonationNotification(donation);
+    } catch (emailError) {
+      console.error("DONATION EMAIL ERROR:", emailError);
+    }
 
     // Strip Mongo _id before returning
     const { _id, ...clean } = donation;

@@ -24,13 +24,13 @@ export default function ContactForm() {
   }
 
   const submit = async (e) => {
+    e.preventDefault();
     if (emailError) {
       toast.error("Please correct the email address.");
       return;
     }
 
     setLoading(true);
-    e.preventDefault();
     try {
       const r = await fetch("/api/contact", {
         method: "POST",

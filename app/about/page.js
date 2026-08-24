@@ -19,7 +19,7 @@ import { useContent } from "@/components/site/content-provider";
 
 const ICONS = [Shield, Heart, Sparkles, Users];
 
-export default function AboutPage() {
+function AboutPageContent() {
   const heroHeadline = useContent(
     "about.hero.headline",
     "A Trust born of devotion, grown by service.",
@@ -114,7 +114,7 @@ export default function AboutPage() {
   );
 
   return (
-    <SiteShell solidHeader={false}>
+    <>
       {/* Hero */}
       <section className='relative h-[70vh] min-h-[500px] w-full overflow-hidden'>
         <img
@@ -319,6 +319,14 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+    </>
+  );
+}
+
+export default function AboutPage() {
+  return (
+    <SiteShell>
+      <AboutPageContent />
     </SiteShell>
   );
 }

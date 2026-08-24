@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, COLLECTIONS } from "@/lib/db";
 import { validateEmail } from "@/lib/validators/email.server";
+import { sendCSRNotification } from "@/lib/email/csr-email";
 
 export async function POST(request) {
   try {
@@ -29,6 +30,12 @@ export async function POST(request) {
     };
 
     await db.collection(COLLECTIONS.csrInquiries).insertOne(inquiry);
+
+    try {
+      await sendCSRNotification(inquiry);
+    } catch (emailError) {
+      console.error("CSR EMAIL ERROR: ", emailError);
+    }
 
     return NextResponse.json({
       ok: true,

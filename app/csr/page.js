@@ -1,10 +1,8 @@
 "use client";
-import Link from "next/link";
 import SiteShell from "@/components/site/site-shell";
 import CSRForm from "./csr-form";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import RichText from "@/components/site/rich-text";
 import {
   Building2,
@@ -22,7 +20,7 @@ import { useContent } from "@/components/site/content-provider";
 
 const ICONS = { Shield, Award, Sparkles, Briefcase, Globe, HandHeart, Users };
 
-export default function CSRPage() {
+function CSRPageContent() {
   // Highlight last 2 words of headline for legacy visual.
 
   const heroheadline = useContent(
@@ -70,7 +68,7 @@ export default function CSRPage() {
       : benifitsPointsRaw;
 
   return (
-    <SiteShell>
+    <>
       {/* Hero */}
       <section className='pt-32 pb-16 gradient-trust text-white'>
         <div className='container max-w-5xl'>
@@ -229,6 +227,14 @@ export default function CSRPage() {
           <CSRForm />
         </div>
       </section>
+    </>
+  );
+}
+
+export default function CSRPage() {
+  return (
+    <SiteShell>
+      <CSRPageContent />
     </SiteShell>
   );
 }

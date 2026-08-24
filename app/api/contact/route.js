@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, COLLECTIONS } from "@/lib/db";
 import { validateEmail } from "@/lib/validators/email.server";
+import { sendContactNotification } from "@/lib/email/contact-email";
 
 export async function POST(request) {
   try {
@@ -32,6 +33,12 @@ export async function POST(request) {
     console.log("COLLECTION:", COLLECTIONS.contacts);
 
     await db.collection(COLLECTIONS.contacts).insertOne(contact);
+
+    try {
+      await sendContactNotification(contact);
+    } catch (emailError) {
+      console.error("CONTACT EMAIL ERROR:", emailError);
+    }
 
     return NextResponse.json({
       ok: true,

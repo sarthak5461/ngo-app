@@ -9,6 +9,7 @@ const nextConfig = {
     serverComponentsExternalPackages: ["mongodb"],
     // Allow up to 10 MB request bodies (media uploads via Server Actions).
     serverActions: { bodySizeLimit: "10mb" },
+    serverComponentsExternalPackages: ["pdfkit"],
   },
   webpack(config, { dev }) {
     if (dev) {

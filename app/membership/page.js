@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useContent } from "@/components/site/content-provider";
 import {
-  CheckCircle2,
   HandHeart,
   Sparkles,
   Users,
@@ -16,7 +15,7 @@ import {
 
 const ICONS = { HandHeart, Mail, Users, FileCheck2 };
 
-export default function MembershipPage() {
+function MembershipContent() {
   const heroheadline = useContent("membership.hero.headline");
   const words = (heroheadline || "").split(" ");
   const tail = words.length > 1 ? words.splice(-1).join(" ") : "";
@@ -42,7 +41,7 @@ export default function MembershipPage() {
     typeof faqsAccRaw === "string" ? safeJSON(faqsAccRaw) : faqsAccRaw;
 
   return (
-    <SiteShell>
+    <>
       {/* Hero */}
       <section className='pt-32 pb-16 gradient-trust text-white'>
         <div className='container max-w-5xl'>
@@ -165,6 +164,14 @@ export default function MembershipPage() {
           </div>
         </div>
       </section>
+    </>
+  );
+}
+
+export default function MembershipPage() {
+  return (
+    <SiteShell>
+      <MembershipContent />
     </SiteShell>
   );
 }

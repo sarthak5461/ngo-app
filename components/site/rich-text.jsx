@@ -43,11 +43,11 @@ export default function RichText({ content, html, className = "" }) {
         );
       }
       if (domNode.name === "img") {
-        const width = domNode.attribs.width;
-        const align = domNode.attribs["data-align"] || "center";
+        const width = domNode.attribs?.width;
+        const align = domNode.attribs?.["data-align"] || "center";
 
         return (
-          <div
+          <span
             className={`my-8 flex ${
               align === "left"
                 ? "justify-start"
@@ -57,8 +57,8 @@ export default function RichText({ content, html, className = "" }) {
             }`}
           >
             <img
-              src={domNode.attribs.src}
-              alt={domNode.attribs.alt || ""}
+              src={domNode.attribs?.src}
+              alt={domNode.attribs?.alt || ""}
               style={{
                 width: width ? `${width}px` : "100%",
                 maxWidth: "100%",
@@ -66,7 +66,7 @@ export default function RichText({ content, html, className = "" }) {
               }}
               className='rounded-xl shadow-lg'
             />
-          </div>
+          </span>
         );
       }
     },

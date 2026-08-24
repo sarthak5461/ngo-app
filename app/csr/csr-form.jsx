@@ -38,21 +38,25 @@ export default function CSRForm() {
   }
 
   const submit = async (e) => {
+    e.preventDefault();
     if (emailError) {
       toast.error("Please correct the email address.");
       return;
     }
     setLoading(true);
-    e.preventDefault();
     try {
       const r = await fetch("/api/csr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: `${form.name} (${form.company})`,
+          company: form.company,
+          name: form.name,
+          designation: form.designation,
           email: form.email,
-          subject: `CSR Enquiry — ${form.interest}`,
-          message: `Company: ${form.company}\nDesignation: ${form.designation}\nPhone: ${form.phone}\nInterest: ${form.interest}\nBudget: ${form.budget}\n\nMessage:\n${form.message}`,
+          phone: form.phone,
+          interest: form.interest,
+          budget: form.budget,
+          message: form.message,
         }),
       });
       const d = await r.json();
