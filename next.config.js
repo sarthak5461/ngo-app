@@ -13,6 +13,9 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: "10mb",
     },
+    outputFileTracingIncludes: {
+      "/*": ["./node_modules/argon2/**/*"],
+    },
   },
 
   webpack(config, { dev }) {
