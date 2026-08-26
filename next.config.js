@@ -1,38 +1,50 @@
 const nextConfig = {
   reactStrictMode: false,
+
   output: "standalone",
+
   images: {
     unoptimized: true,
   },
+
   experimental: {
-    // Remove if not using Server Components
-    serverComponentsExternalPackages: ["mongodb"],
-    // Allow up to 10 MB request bodies (media uploads via Server Actions).
-    serverActions: { bodySizeLimit: "10mb" },
-    serverComponentsExternalPackages: ["pdfkit"],
+    serverComponentsExternalPackages: ["mongodb", "pdfkit", "argon2"],
+
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
   },
+
   webpack(config, { dev }) {
     if (dev) {
-      // Reduce CPU/memory from file watching
       config.watchOptions = {
-        poll: 2000, // check every 2 seconds
-        aggregateTimeout: 300, // wait before rebuilding
+        poll: 2000,
+        aggregateTimeout: 300,
         ignored: ["**/node_modules"],
       };
     }
+
     return config;
   },
+
   onDemandEntries: {
     maxInactiveAge: 10000,
     pagesBufferLength: 2,
   },
+
   async headers() {
     return [
       {
         source: "/(.*)",
         headers: [
-          { key: "X-Frame-Options", value: "ALLOWALL" },
-          { key: "Content-Security-Policy", value: "frame-ancestors *;" },
+          {
+            key: "X-Frame-Options",
+            value: "ALLOWALL",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: "frame-ancestors *;",
+          },
           {
             key: "Access-Control-Allow-Origin",
             value: process.env.CORS_ORIGINS || "*",
@@ -41,7 +53,10 @@ const nextConfig = {
             key: "Access-Control-Allow-Methods",
             value: "GET, POST, PUT, DELETE, OPTIONS",
           },
-          { key: "Access-Control-Allow-Headers", value: "*" },
+          {
+            key: "Access-Control-Allow-Headers",
+            value: "*",
+          },
         ],
       },
     ];
