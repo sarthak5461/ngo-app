@@ -38,11 +38,29 @@ function AdminLoginContent() {
         }),
       });
 
+      const contentType = r.headers.get("content-type") || "";
+
+      if (!contentType.includes("application/json")) {
+        const text = await r.text();
+
+        console.error("LOGIN NON-JSON RESPONSE:", {
+          status: r.status,
+          contentType,
+          response: text,
+        });
+
+        throw new Error(
+          `Login API returned ${r.status} ${r.statusText}, not JSON.`,
+        );
+      }
+
       const d = await r.json();
 
       console.log("LOGIN RESPONSE:", d);
 
-      if (!r.ok) throw new Error(d.error);
+      if (!r.ok) {
+        throw new Error(d.error || "Login failed");
+      }
 
       toast.success(`Welcome, ${d.user.name}`);
 

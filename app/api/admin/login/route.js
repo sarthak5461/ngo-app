@@ -23,8 +23,16 @@ export async function POST(request) {
 
     const user = await getUserByEmail(email);
 
-    // console.log("Email entered:", email);
-    // console.log("User found:", user);
+    if (!user) {
+      return NextResponse.json(
+        {
+          error: "Invalid email or password.",
+        },
+        {
+          status: 401,
+        },
+      );
+    }
 
     if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
       return NextResponse.json(
@@ -33,17 +41,6 @@ export async function POST(request) {
         },
         {
           status: 423,
-        },
-      );
-    }
-
-    if (!user) {
-      return NextResponse.json(
-        {
-          error: "Invalid email or password.",
-        },
-        {
-          status: 401,
         },
       );
     }
