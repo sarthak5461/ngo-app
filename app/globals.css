@@ -284,3 +284,44 @@ html {
 .ProseMirror:focus {
   outline: none;
 }
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  #membercard,
+  #membercard * {
+    visibility: visible !important;
+  }
+
+  #membercard {
+    position: absolute !important;
+    left: 50% !important;
+    top: 40px !important;
+    transform: translateX(-50%) !important;
+
+    width: 380px !important;
+    max-width: 380px !important;
+
+    margin: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+}

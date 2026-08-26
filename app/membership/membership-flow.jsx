@@ -24,6 +24,7 @@ import {
   Printer,
   FileCheck2,
   Building2,
+  User,
 } from "lucide-react";
 const PRESETS = [500, 1000, 2500, 5000, 10000];
 const OCCUPATIONS = [
@@ -436,7 +437,7 @@ export default function MembershipFlow() {
                       className='w-full h-full object-cover'
                     />
                   ) : (
-                    <Camera className='w-7 h-7 text-slate-400' />
+                    <User className='w-7 h-7 text-slate-400' />
                   )}
                 </div>
                 <div className='flex-1'>

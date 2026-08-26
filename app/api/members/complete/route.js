@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import crypto from "crypto";
 import { generateMemberId } from "@/lib/member-id";
+import { sendMemberNotification } from "@/lib/email/member-email";
 
 const MOCK_RAZORPAY_SECRET = "MOCK_DEMO_SECRET_DO_NOT_USE_IN_PROD";
 
@@ -42,6 +43,13 @@ export async function POST(request) {
       );
     }
     const member = await db.collection("members").findOne({ id });
+
+    if (!member) {
+      return handleCORS(
+        NextResponse.json({ error: "Member not found" }, { status: 404 }),
+      );
+    }
+
     if (member.status === "active") {
       return handleCORS(
         NextResponse.json(
@@ -54,10 +62,6 @@ export async function POST(request) {
         ),
       );
     }
-    if (!member)
-      return handleCORS(
-        NextResponse.json({ error: "Member not found" }, { status: 404 }),
-      );
     if (member.orderId !== orderId)
       return handleCORS(
         NextResponse.json({ error: "Order mismatch" }, { status: 400 }),
@@ -113,6 +117,13 @@ export async function POST(request) {
       .updateOne({ orderId }, { $set: { status: "paid", paidAt: new Date() } });
 
     const final = await db.collection("members").findOne({ id });
+
+    try {
+      await sendMemberNotification(final);
+    } catch (emailError) {
+      console.error("Member email error: ", emailError);
+    }
+
     const { _id, ...clean } = final;
     return handleCORS(NextResponse.json({ success: true, member: clean }));
   } catch (error) {

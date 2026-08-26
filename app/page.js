@@ -908,10 +908,10 @@ function VolunteerSection() {
                   <Label>Area of Interest</Label>
                   <div className='grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1.5'>
                     {[
-                      "education",
-                      "disaster-relief",
-                      "environment",
-                      "healthcare",
+                      "Education",
+                      "Disaster-relief",
+                      "Environment",
+                      "Healthcare",
                     ].map((k) => (
                       <button
                         type='button'
