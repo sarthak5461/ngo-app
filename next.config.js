@@ -13,6 +13,7 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: "10mb",
     },
+
     outputFileTracingIncludes: {
       "/*": ["./node_modules/argon2/**/*"],
     },
@@ -42,23 +43,23 @@ const nextConfig = {
         headers: [
           {
             key: "X-Frame-Options",
-            value: "ALLOWALL",
+            value: "SAMEORIGIN",
           },
           {
             key: "Content-Security-Policy",
-            value: "frame-ancestors *;",
+            value: "frame-ancestors 'self';",
           },
           {
-            key: "Access-Control-Allow-Origin",
-            value: process.env.CORS_ORIGINS || "*",
+            key: "X-Content-Type-Options",
+            value: "nosniff",
           },
           {
-            key: "Access-Control-Allow-Methods",
-            value: "GET, POST, PUT, DELETE, OPTIONS",
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
           },
           {
-            key: "Access-Control-Allow-Headers",
-            value: "*",
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(), payment=(self)",
           },
         ],
       },

@@ -1,8 +1,22 @@
 import { NextResponse } from "next/server";
 import { listVolunteers } from "@/lib/services";
+import { requireAdmin } from "@/lib/auth/auth";
+import { requirePermission, PERMISSIONS } from "@/lib/auth/rbac";
 
 export async function GET(request) {
   try {
+    const auth = await requireAdmin(request);
+
+    if (!auth.success) {
+      return auth.response;
+    }
+
+    const forbidden = requirePermission(auth.user, PERMISSIONS.VOLUNTEERS_VIEW);
+
+    if (forbidden) {
+      return forbidden;
+    }
+
     const { searchParams } = new URL(request.url);
 
     const rows = await listVolunteers({

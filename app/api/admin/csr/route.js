@@ -19,8 +19,6 @@ export async function GET(request) {
       return forbidden;
     }
 
-    const user = auth.user;
-
     const db = await getDb();
 
     const rows = await db
@@ -57,7 +55,11 @@ export async function POST(request) {
       return auth.response;
     }
 
-    const user = auth.user;
+    const forbidden = requirePermission(auth.user, PERMISSIONS.CSR_EDIT);
+
+    if (forbidden) {
+      return forbidden;
+    }
 
     return NextResponse.json({
       ok: true,

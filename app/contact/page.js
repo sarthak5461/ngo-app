@@ -15,7 +15,7 @@ function ContactPageContent() {
   const workHoursInfo = useContent("contact.info.hours");
 
   return (
-    <SiteShell>
+    <>
       <section className='pt-32 pb-12 gradient-trust text-white'>
         <div className='container'>
           <Badge className='bg-amber-500/20 text-amber-300 border border-amber-400/30 hover:bg-amber-500/20 mb-4 backdrop-blur-sm'>
@@ -74,7 +74,7 @@ function ContactPageContent() {
           </div>
         </div>
       </section>
-    </SiteShell>
+    </>
   );
 }
 

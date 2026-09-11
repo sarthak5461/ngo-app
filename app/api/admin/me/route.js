@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { verifyAccessToken } from "@/lib/auth/jwt";
+import { ROLE_PERMISSIONS } from "@/lib/auth/rbac";
 
 export async function GET(request) {
   try {
@@ -35,6 +36,7 @@ export async function GET(request) {
       email: user.email,
       role: user.role,
       userId: user.userId,
+      permissions: ROLE_PERMISSIONS[user.role] || [],
     });
   } catch (error) {
     console.error("ME ERROR:", error);

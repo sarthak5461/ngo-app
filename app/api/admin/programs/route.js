@@ -20,8 +20,6 @@ export async function GET(request) {
       return forbidden;
     }
 
-    const user = auth.user;
-
     const db = await getDb();
 
     const rows = await db
@@ -54,15 +52,10 @@ export async function POST(request) {
       return auth.response;
     }
 
-    const forbidden = requirePermission(auth.user, PERMISSIONS.CONTENT_VIEW);
+    const forbidden = requirePermission(auth.user, PERMISSIONS.CONTENT_EDIT);
 
     if (forbidden) {
       return forbidden;
-    }
-    const session = getSessionFromHeaders(request);
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
     }
 
     const body = await request.json();

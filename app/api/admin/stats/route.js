@@ -1,49 +1,67 @@
 import { NextResponse } from "next/server";
 import { getDb, COLLECTIONS } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/auth";
+import { hasPermission, PERMISSIONS } from "@/lib/auth/rbac";
 
 export async function GET(request) {
   try {
-    const user = await requireAdmin(request);
+    const auth = await requireAdmin(request);
 
-    if (!user) {
-      return NextResponse.json(
-        {
-          error: "Unauthorized",
-        },
-        {
-          status: 401,
-        },
-      );
+    if (!auth.success) {
+      return auth.response;
     }
 
     const db = await getDb();
+    const user = auth.user;
+
+    const canViewDonations = hasPermission(user, PERMISSIONS.DONATIONS_VIEW);
+
+    const canViewMembers = hasPermission(user, PERMISSIONS.MEMBERS_VIEW);
+
+    const canViewVolunteers = hasPermission(user, PERMISSIONS.VOLUNTEERS_VIEW);
+
+    const canViewCSR = hasPermission(user, PERMISSIONS.CSR_VIEW);
 
     const [donations, activeMembers, volunteerCount, contactCount, csrCount] =
       await Promise.all([
-        db.collection(COLLECTIONS.donations).find({}).toArray(),
-        db.collection(COLLECTIONS.members).countDocuments(),
-        db.collection(COLLECTIONS.volunteers).countDocuments(),
-        db.collection(COLLECTIONS.contacts).countDocuments(),
-        db.collection(COLLECTIONS.csrInquiries).countDocuments(),
+        canViewDonations
+          ? db.collection(COLLECTIONS.donations).find({}).toArray()
+          : Promise.resolve([]),
+
+        canViewMembers
+          ? db.collection(COLLECTIONS.members).countDocuments()
+          : Promise.resolve(0),
+
+        canViewVolunteers
+          ? db.collection(COLLECTIONS.volunteers).countDocuments()
+          : Promise.resolve(0),
+
+        canViewCSR
+          ? db.collection(COLLECTIONS.contacts).countDocuments()
+          : Promise.resolve(0),
+
+        canViewCSR
+          ? db.collection(COLLECTIONS.csrInquiries).countDocuments()
+          : Promise.resolve(0),
       ]);
 
-    const donationCount = donations.length;
+    const donationCount = canViewDonations ? donations.length : 0;
 
-    const totalRaised = donations.reduce(
-      (sum, d) => sum + Number(d.amount || 0),
-      0,
-    );
+    const totalRaised = canViewDonations
+      ? donations.reduce((sum, d) => sum + Number(d.amount || 0), 0)
+      : 0;
 
     return NextResponse.json({
       totalRaised,
       donationCount,
+
       activeMembers,
       pendingMembers: 0,
+      memberContributions: canViewMembers ? activeMembers * 500 : 0,
+
       volunteerCount,
       csrCount,
       contactCount,
-      memberContributions: activeMembers * 500,
     });
   } catch (error) {
     console.error("ADMIN STATS ERROR:", error);

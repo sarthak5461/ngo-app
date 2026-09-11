@@ -27,6 +27,7 @@ export async function DELETE(request, { params }) {
     if (!ObjectId.isValid(id)) {
       return handleCORS(
         NextResponse.json({ error: "Invalid media ID" }, { status: 400 }),
+        request,
       );
     }
 
@@ -39,6 +40,7 @@ export async function DELETE(request, { params }) {
     if (!media) {
       return handleCORS(
         NextResponse.json({ error: "Media not found" }, { status: 404 }),
+        request,
       );
     }
 
@@ -54,17 +56,14 @@ export async function DELETE(request, { params }) {
       NextResponse.json({
         success: true,
       }),
+      request,
     );
   } catch (error) {
     console.error("MEDIA DELETE ERROR:", error);
 
     return handleCORS(
-      NextResponse.json(
-        {
-          error: error.message || "Delete failed",
-        },
-        { status: 500 },
-      ),
+      NextResponse.json({ error: "Delete failed" }, { status: 500 }),
+      request,
     );
   }
 }

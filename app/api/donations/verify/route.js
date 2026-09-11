@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { getDb } from "@/lib/db";
 import crypto from "crypto";
 import { sendDonationNotification } from "@/lib/email/donation-email";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 
 const MOCK_RAZORPAY_SECRET = "MOCK_DEMO_SECRET_DO_NOT_USE_IN_PROD";
 
@@ -40,6 +41,24 @@ function newReceiptNumber() {
 
 export async function POST(request) {
   try {
+
+
+    const rateLimit= await checkRateLimit({
+      request,
+      key: "donation-verify",
+      limit: 5, 
+      windowSeconds: 15 * 60, // 15 minutes
+    }); 
+
+    if(!rateLimit.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429, headers: {
+          "Retry-After": String(rateLimit.retryAfter),
+        }, },
+      );
+    }
+
     const body = await request.json();
     const db = await getDb();
     const { orderId, paymentId, signature, donor = {} } = body;
@@ -107,7 +126,3 @@ export async function POST(request) {
     return NextResponse.json({ error: "Failed to Verify" }, { status: 500 });
   }
 }
-
-// if (route === "/donations/verify" && method === "POST") {
-
-// }

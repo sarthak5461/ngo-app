@@ -1,13 +1,40 @@
 import { NextResponse } from "next/server";
 
+import { checkRateLimit } from "@/lib/security/rate-limit";
 import { getUserByEmail, updateUser } from "@/lib/services/users";
 
 import { verifyPassword } from "@/lib/auth/password";
 
 import { createAccessToken } from "@/lib/auth/jwt";
 
+
 export async function POST(request) {
   try {
+
+    const rateLimit = await checkRateLimit({
+      request,
+      key: "admin-login",
+      limit: 5,
+      windowSeconds: 15 * 60, // 15 minutes
+    });
+
+ 
+     if (!rateLimit.success) {
+      return NextResponse.json(
+        {
+          error:
+            "Too many login attempts. Please try again later.",
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimit.retryAfter),
+          },
+        },
+      );
+    }
+    
+
     const { email, password } = await request.json();
 
     if (!email || !password) {

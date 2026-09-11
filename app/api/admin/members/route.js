@@ -19,8 +19,6 @@ export async function GET(request) {
       return forbidden;
     }
 
-    const user = auth.user;
-
     const db = await getDb();
 
     const { searchParams } = new URL(request.url);

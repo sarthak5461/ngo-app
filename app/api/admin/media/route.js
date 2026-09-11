@@ -36,6 +36,7 @@ export async function GET(request) {
       NextResponse.json({
         rows: normalized,
       }),
+      request,
     );
   } catch (error) {
     console.error("MEDIA GET ERROR:", error);
@@ -43,10 +44,11 @@ export async function GET(request) {
     return handleCORS(
       NextResponse.json(
         {
-          error: error.message || "Failed to load media",
+          error: "Failed to load media",
         },
         { status: 500 },
       ),
+      request,
     );
   }
 }
@@ -59,10 +61,7 @@ export async function POST(request) {
       return auth.response;
     }
 
-    const forbidden = auth.requirePermission(
-      auth.user,
-      PERMISSIONS.MEDIA_UPLOAD,
-    );
+    const forbidden = requirePermission(auth.user, PERMISSIONS.MEDIA_UPLOAD);
 
     if (forbidden) {
       return forbidden;
@@ -74,6 +73,19 @@ export async function POST(request) {
     if (!file) {
       return handleCORS(
         NextResponse.json({ error: "No file uploaded" }, { status: 400 }),
+        request,
+      );
+    }
+
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+    if (file.size > MAX_FILE_SIZE) {
+      return handleCORS(
+        NextResponse.json(
+          { error: "File size must be 5 MB or less" },
+          { status: 400 },
+        ),
+        request,
       );
     }
 
@@ -83,6 +95,7 @@ export async function POST(request) {
           { error: "Only image uploads allowed" },
           { status: 400 },
         ),
+        request,
       );
     }
 
@@ -113,6 +126,7 @@ export async function POST(request) {
         id: inserted.insertedId,
         ...mediaDoc,
       }),
+      request,
     );
   } catch (error) {
     console.error("MEDIA UPLOAD ERROR:", error);
@@ -120,10 +134,11 @@ export async function POST(request) {
     return handleCORS(
       NextResponse.json(
         {
-          error: error.message || "Upload failed",
+          error: "Upload failed",
         },
         { status: 500 },
       ),
+      request,
     );
   }
 }

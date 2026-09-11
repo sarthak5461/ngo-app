@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { requireAdmin } from "@/lib/auth/auth";
-import { requirePermission, PERMISSIONS } from "@/lib/auth/rbac";
+import { requirePermission, PERMISSIONS, ROLES } from "@/lib/auth/rbac";
 
 import {
   getUserByEmail,
@@ -28,17 +28,42 @@ export async function PUT(request, { params }) {
 
     const { name, email, role, status } = body;
 
-    if (!name || !email || !role || !status) {
+    const normalizedName = typeof name === "string" ? name.trim() : "";
+
+    const normalizedEmail =
+      typeof email === "string" ? email.trim().toLowerCase() : "";
+
+    if (!normalizedName || !normalizedEmail || !role || !status) {
+      return NextResponse.json(
+        { error: "All fields are required." },
+        { status: 400 },
+      );
+    }
+
+    const allowedRoles = Object.values(ROLES);
+
+    if (!allowedRoles.includes(role)) {
+      return NextResponse.json({ error: "Invalid role." }, { status: 400 });
+    }
+
+    const allowedStatuses = ["active", "inactive"];
+
+    if (!allowedStatuses.includes(status)) {
+      return NextResponse.json({ error: "Invalid status." }, { status: 400 });
+    }
+
+    const currentUser = await getUserById(params.id);
+
+    if (!currentUser) {
       return NextResponse.json(
         {
-          error: "All fields are required.",
+          error: "User not found.",
         },
         {
-          status: 400,
+          status: 404,
         },
       );
     }
-    const currentUser = await getUserById(params.id);
 
     // Prevent users from changing their own role or status
     if (auth.user.userId === currentUser._id.toString()) {
@@ -54,18 +79,7 @@ export async function PUT(request, { params }) {
       }
     }
 
-    if (!currentUser) {
-      return NextResponse.json(
-        {
-          error: "User not found.",
-        },
-        {
-          status: 404,
-        },
-      );
-    }
-
-    const existing = await getUserByEmail(email);
+    const existing = await getUserByEmail(normalizedEmail);
 
     if (existing && existing._id.toString() !== currentUser._id.toString()) {
       return NextResponse.json(
@@ -79,8 +93,8 @@ export async function PUT(request, { params }) {
     }
 
     await updateUserProfile(params.id, {
-      name,
-      email,
+      name: normalizedName,
+      email: normalizedEmail,
       role,
       status,
     });

@@ -6,7 +6,7 @@ import {
   seedContentBlocks,
 } from "@/lib/services";
 
-import { getDefaultsFromSchemas } from "@/lib/cms/schemas";
+import { getAllManagedKeys } from "@/lib/cms/schemas";
 import { requireAdmin } from "@/lib/auth/auth";
 import { PERMISSIONS, requirePermission } from "@/lib/auth/rbac";
 
@@ -18,7 +18,7 @@ export async function GET(request) {
       return auth.response;
     }
 
-    const forbidden = requirePermission(auth.user, PERMISSIONS.CONTENT_EDIT);
+    const forbidden = requirePermission(auth.user, PERMISSIONS.CONTENT_VIEW);
 
     if (forbidden) {
       return forbidden;
@@ -41,21 +41,42 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const { key, value } = await request.json();
-
     const auth = await requireAdmin(request);
 
     if (!auth.success) {
       return auth.response;
     }
 
-    const forbidden = requirePermission(auth.user, PERMISSIONS.CONTENT_VIEW);
+    const forbidden = requirePermission(auth.user, PERMISSIONS.CONTENT_EDIT);
 
     if (forbidden) {
       return forbidden;
     }
 
-    const user = auth.user;
+    const body = await request.json();
+
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json(
+        { error: "Invalid request body" },
+        { status: 400 },
+      );
+    }
+
+    const { key, value } = body;
+
+    if (typeof key !== "string" || !key.trim()) {
+      return NextResponse.json(
+        { error: "Invalid content key" },
+        { status: 400 },
+      );
+    }
+
+    if (!getAllManagedKeys().includes(key)) {
+      return NextResponse.json(
+        { error: "Invalid content key" },
+        { status: 400 },
+      );
+    }
 
     await setContentBlock(key, value, "Admin");
 
@@ -67,6 +88,7 @@ export async function POST(request) {
 
       await setContentBlock(pageKey, new Date().toISOString(), "System");
     }
+
     return NextResponse.json({
       success: true,
     });

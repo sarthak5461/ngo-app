@@ -1,18 +1,49 @@
 import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { getDb, COLLECTIONS } from "@/lib/db";
-import { validateEmail } from "@/lib/validators/email.server";
+import { checkRateLimit } from "@/lib/security/rate-limit";
+
+const ALLOWED_CAUSES = [
+  "general",
+  "education",
+  "disaster-relief",
+  "environment",
+];
+
+const MIN_DONATION = 500;
+const MAX_DONATION = 1000000;
+
 export async function POST(request) {
   try {
-    const body = await request.json();
-    const db = await getDb();
+    // Rate limiting
+    const rateLimit = await checkRateLimit({
+      request,
+      key: "donation-order",
+      limit: 5,
+      windowSeconds: 15 * 60,
+    });
 
-    const email = await validateEmail(body.email);
-
-    if (!email.valid) {
-      Response.json(
+    if (!rateLimit.success) {
+      return NextResponse.json(
         {
-          error: email.message,
+          error: "Too many requests. Please try again later.",
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimit.retryAfter),
+          },
+        },
+      );
+    }
+
+    const body = await request.json();
+
+    // Validate request body
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json(
+        {
+          error: "Invalid request body.",
         },
         {
           status: 400,
@@ -20,20 +51,87 @@ export async function POST(request) {
       );
     }
 
-    body.email = email.email;
+    // Only allow amount and cause
+    const allowedFields = ["amount", "cause"];
 
-    const amount = parseInt(body.amount, 10);
+    const unexpectedFields = Object.keys(body).filter(
+      (field) => !allowedFields.includes(field),
+    );
 
-    const cause = body.cause || "general";
-
-    if (!amount || amount < 10) {
+    if (unexpectedFields.length > 0) {
       return NextResponse.json(
-        { error: "Minimum donation is ₹10" },
-        { status: 400 },
+        {
+          error: "Invalid fields in request.",
+        },
+        {
+          status: 400,
+        },
       );
     }
 
-    const orderId = `order_${uuidv4().replace(/-/g, "").slice(0, 20)}`;
+    // Amount must be a number
+    if (
+      typeof body.amount !== "number" ||
+      !Number.isFinite(body.amount) ||
+      !Number.isInteger(body.amount)
+    ) {
+      return NextResponse.json(
+        {
+          error: "Donation amount must be a valid whole number.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    const amount = body.amount;
+
+    // Donation limits
+    if (amount < MIN_DONATION) {
+      return NextResponse.json(
+        {
+          error: `Minimum donation is ₹${MIN_DONATION}`,
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (amount > MAX_DONATION) {
+      return NextResponse.json(
+        {
+          error: "Maximum donation amount is ₹10,00,000.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    // Cause validation
+    const cause =
+      typeof body.cause === "string"
+        ? body.cause.trim()
+        : "general";
+
+    if (!ALLOWED_CAUSES.includes(cause)) {
+      return NextResponse.json(
+        {
+          error: "Invalid donation cause.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    const db = await getDb();
+
+    const orderId = `order_${uuidv4()
+      .replace(/-/g, "")
+      .slice(0, 20)}`;
 
     const orderDoc = {
       id: uuidv4(),
@@ -45,7 +143,9 @@ export async function POST(request) {
       createdAt: new Date(),
     };
 
-    await db.collection(COLLECTIONS.donationOrders).insertOne(orderDoc);
+    await db
+      .collection(COLLECTIONS.donationOrders)
+      .insertOne(orderDoc);
 
     return NextResponse.json({
       orderId,
@@ -57,8 +157,12 @@ export async function POST(request) {
     console.error("CREATE ORDER ERROR:", error);
 
     return NextResponse.json(
-      { error: "Failed to create order" },
-      { status: 500 },
+      {
+        error: "Failed to create order",
+      },
+      {
+        status: 500,
+      },
     );
   }
 }

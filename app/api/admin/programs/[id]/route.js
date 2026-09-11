@@ -18,8 +18,6 @@ export async function GET(request, { params }) {
       return forbidden;
     }
 
-    const user = auth.user;
-
     const db = await getDb();
 
     const row = await db.collection(COLLECTIONS.programs).findOne({
@@ -59,8 +57,6 @@ export async function PUT(request, { params }) {
     if (forbidden) {
       return forbidden;
     }
-
-    const user = auth.user;
 
     const body = await request.json();
 
@@ -167,13 +163,15 @@ export async function DELETE(request, { params }) {
       return forbidden;
     }
 
-    const user = auth.user;
-
     const db = await getDb();
 
-    await db.collection(COLLECTIONS.programs).deleteOne({
+    const result = await db.collection(COLLECTIONS.programs).deleteOne({
       id: params.id,
     });
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ error: "Program not found" }, { status: 404 });
+    }
 
     return NextResponse.json({
       success: true,

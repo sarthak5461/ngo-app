@@ -5,19 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import RichTextEditor from "@/components/admin/rich-text-editor";
 import {
   Loader2,
   Save,
-  CheckCircle2,
   ChevronDown,
   ChevronRight,
   Image as ImageIcon,
-  Replace,
   Trash2,
-  Upload,
   GripVertical,
   Plus,
   X,
@@ -29,17 +25,17 @@ import MediaPicker from "./media-picker";
 function Toggle({ value, onChange }) {
   return (
     <button
-      type='button'
+      type="button"
       onClick={() => onChange(!value)}
       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition ${value ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-slate-50 text-slate-500 border-slate-200"}`}
     >
       {value ? (
         <>
-          <Eye className='w-3.5 h-3.5' /> Visible
+          <Eye className="w-3.5 h-3.5" /> Visible
         </>
       ) : (
         <>
-          <EyeOff className='w-3.5 h-3.5' /> Hidden
+          <EyeOff className="w-3.5 h-3.5" /> Hidden
         </>
       )}
     </button>
@@ -51,44 +47,44 @@ function ImageField({ value, onChange, fallback }) {
   const current = value || fallback;
   return (
     <div>
-      <div className='flex flex-col sm:flex-row gap-3 items-start'>
-        <div className='w-full sm:w-48 aspect-video rounded-lg overflow-hidden bg-slate-100 border'>
+      <div className="flex flex-col sm:flex-row gap-3 items-start">
+        <div className="w-full sm:w-48 aspect-video rounded-lg overflow-hidden bg-slate-100 border">
           {current ? (
             <img
               src={current}
-              alt='current'
-              className='w-full h-full object-cover'
+              alt="current"
+              className="w-full h-full object-cover"
             />
           ) : (
-            <div className='w-full h-full flex items-center justify-center text-slate-400'>
-              <ImageIcon className='w-8 h-8' />
+            <div className="w-full h-full flex items-center justify-center text-slate-400">
+              <ImageIcon className="w-8 h-8" />
             </div>
           )}
         </div>
-        <div className='flex flex-wrap gap-2'>
+        <div className="flex flex-wrap gap-2">
           <Button
-            type='button'
-            variant='outline'
-            size='sm'
+            type="button"
+            variant="outline"
+            size="sm"
             onClick={() => setPickerOpen(true)}
           >
-            <ImageIcon className='w-3.5 h-3.5 mr-1.5' />{" "}
+            <ImageIcon className="w-3.5 h-3.5 mr-1.5" />{" "}
             {current ? "Replace" : "Select image"}
           </Button>
           {value && value !== fallback && (
             <Button
-              type='button'
-              variant='ghost'
-              size='sm'
+              type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => onChange("")}
-              className='text-rose-600 hover:bg-rose-50 hover:text-rose-700'
+              className="text-rose-600 hover:bg-rose-50 hover:text-rose-700"
             >
-              <Trash2 className='w-3.5 h-3.5 mr-1.5' /> Reset to default
+              <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Reset to default
             </Button>
           )}
         </div>
       </div>
-      <p className='text-[11px] text-slate-500 mt-1.5'>
+      <p className="text-[11px] text-slate-500 mt-1.5">
         {value ? "Custom image set" : "Using default image"}
       </p>
       <MediaPicker
@@ -103,23 +99,23 @@ function ImageField({ value, onChange, fallback }) {
 
 function FileField({ value, onChange }) {
   return (
-    <div className='space-y-3'>
+    <div className="space-y-3">
       {value && (
         <a
           href={value}
-          target='_blank'
-          className='text-blue-700 underline text-sm'
+          target="_blank"
+          className="text-blue-700 underline text-sm"
         >
           View Uploaded File
         </a>
       )}
 
       <input
-        type='text'
+        type="text"
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
-        placeholder='File URL'
-        className='w-full border rounded-md px-3 py-2'
+        placeholder="File URL"
+        className="w-full border rounded-md px-3 py-2"
       />
     </div>
   );
@@ -151,23 +147,23 @@ function ListField({ value, onChange, itemFields, fallback }) {
     update(items.map((it, idx) => (idx === i ? { ...it, [key]: v } : it)));
 
   return (
-    <div className='space-y-2'>
+    <div className="space-y-2">
       {items.map((it, i) => (
         <div
           key={i}
-          className='flex flex-col sm:flex-row gap-2 items-start sm:items-center p-3 border border-slate-200 rounded-lg bg-white'
+          className="flex flex-col sm:flex-row gap-2 items-start sm:items-center p-3 border border-slate-200 rounded-lg bg-white"
         >
-          <div className='flex flex-col gap-0.5 shrink-0'>
+          <div className="flex flex-col gap-0.5 shrink-0">
             <button
-              type='button'
+              type="button"
               onClick={() => move(i, -1)}
               disabled={i === 0}
-              className='p-1 hover:bg-slate-100 rounded disabled:opacity-30'
+              className="p-1 hover:bg-slate-100 rounded disabled:opacity-30"
             >
-              <GripVertical className='w-4 h-4 text-slate-400' />
+              <GripVertical className="w-4 h-4 text-slate-400" />
             </button>
           </div>
-          <div className='flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2 w-full'>
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
             {itemFields.map((f) => (
               <div key={f.key}>
                 {f.type === "toggle" ? (
@@ -179,7 +175,7 @@ function ListField({ value, onChange, itemFields, fallback }) {
                   <ImageField
                     value={it[f.key]}
                     onChange={(v) => setField(i, f.key, v)}
-                    fallback=''
+                    fallback=""
                   />
                 ) : f.type === "list" ? (
                   <ListField
@@ -203,39 +199,39 @@ function ListField({ value, onChange, itemFields, fallback }) {
               </div>
             ))}
           </div>
-          <div className='flex gap-1'>
+          <div className="flex gap-1">
             <Button
-              type='button'
-              size='sm'
-              variant='ghost'
+              type="button"
+              size="sm"
+              variant="ghost"
               onClick={() => move(i, -1)}
               disabled={i === 0}
             >
               ↑
             </Button>
             <Button
-              type='button'
-              size='sm'
-              variant='ghost'
+              type="button"
+              size="sm"
+              variant="ghost"
               onClick={() => move(i, 1)}
               disabled={i === items.length - 1}
             >
               ↓
             </Button>
             <Button
-              type='button'
-              size='sm'
-              variant='ghost'
+              type="button"
+              size="sm"
+              variant="ghost"
               onClick={() => remove(i)}
-              className='text-rose-600 hover:bg-rose-50'
+              className="text-rose-600 hover:bg-rose-50"
             >
-              <X className='w-4 h-4' />
+              <X className="w-4 h-4" />
             </Button>
           </div>
         </div>
       ))}
-      <Button type='button' size='sm' variant='outline' onClick={add}>
-        <Plus className='w-3.5 h-3.5 mr-1.5' /> Add item
+      <Button type="button" size="sm" variant="outline" onClick={add}>
+        <Plus className="w-3.5 h-3.5 mr-1.5" /> Add item
       </Button>
     </div>
   );
@@ -255,13 +251,13 @@ function Field({ field, value, onChange }) {
   }
   return (
     <div>
-      <Label className='text-sm font-semibold text-slate-800'>
+      <Label className="text-sm font-semibold text-slate-800">
         {field.label}
       </Label>
       {field.help && (
-        <p className='text-[11px] text-slate-500 mt-0.5 mb-1.5'>{field.help}</p>
+        <p className="text-[11px] text-slate-500 mt-0.5 mb-1.5">{field.help}</p>
       )}
-      <div className='mt-1.5'>
+      <div className="mt-1.5">
         {field.type === "text" && (
           <Input
             value={value ?? ""}
@@ -295,7 +291,7 @@ function Field({ field, value, onChange }) {
 
         {field.type === "link" && (
           <Input
-            type='url'
+            type="url"
             value={value ?? ""}
             onChange={(e) => onChange(e.target.value)}
             placeholder={field.fallback || "https://example.com"}
@@ -359,33 +355,33 @@ export default function PageEditor({ page, slug }) {
 
   if (!loaded)
     return (
-      <div className='py-20 text-center text-slate-400'>
-        <Loader2 className='w-6 h-6 animate-spin inline' />
+      <div className="py-20 text-center text-slate-400">
+        <Loader2 className="w-6 h-6 animate-spin inline" />
       </div>
     );
 
   return (
-    <div className='space-y-3'>
+    <div className="space-y-3">
       {page.sections.map((section) => {
         const isOpen = openSection === section.id;
         return (
-          <Card key={section.id} className='border-0 shadow-sm overflow-hidden'>
+          <Card key={section.id} className="border-0 shadow-sm overflow-hidden">
             <button
-              type='button'
+              type="button"
               onClick={() => setOpenSection(isOpen ? null : section.id)}
-              className='w-full flex items-center justify-between p-5 hover:bg-slate-50 text-left transition'
+              className="w-full flex items-center justify-between p-5 hover:bg-slate-50 text-left transition"
             >
-              <div className='flex items-center gap-3'>
+              <div className="flex items-center gap-3">
                 {isOpen ? (
-                  <ChevronDown className='w-5 h-5 text-blue-800' />
+                  <ChevronDown className="w-5 h-5 text-blue-800" />
                 ) : (
-                  <ChevronRight className='w-5 h-5 text-slate-400' />
+                  <ChevronRight className="w-5 h-5 text-slate-400" />
                 )}
                 <div>
-                  <div className='font-bold text-slate-900'>
+                  <div className="font-bold text-slate-900">
                     {section.label}
                   </div>
-                  <div className='text-xs text-slate-500'>
+                  <div className="text-xs text-slate-500">
                     {section.fields.length} field
                     {section.fields.length === 1 ? "" : "s"}
                   </div>
@@ -394,19 +390,19 @@ export default function PageEditor({ page, slug }) {
               {isOpen && (
                 <div onClick={(e) => e.stopPropagation()}>
                   <Button
-                    size='sm'
+                    size="sm"
                     disabled={saving}
                     onClick={() => saveSection(section)}
-                    className='gradient-trust text-white'
+                    className="gradient-trust text-white"
                   >
                     {saving ? (
                       <>
-                        <Loader2 className='w-3.5 h-3.5 mr-1.5 animate-spin' />{" "}
+                        <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />{" "}
                         Saving
                       </>
                     ) : (
                       <>
-                        <Save className='w-3.5 h-3.5 mr-1.5' /> Save section
+                        <Save className="w-3.5 h-3.5 mr-1.5" /> Save section
                       </>
                     )}
                   </Button>
@@ -414,8 +410,8 @@ export default function PageEditor({ page, slug }) {
               )}
             </button>
             {isOpen && (
-              <CardContent className='px-5 pb-5 pt-0 border-t bg-slate-50/40'>
-                <div className='space-y-5 pt-4'>
+              <CardContent className="px-5 pb-5 pt-0 border-t bg-slate-50/40">
+                <div className="space-y-5 pt-4">
                   {section.fields.map((f) => (
                     <Field
                       key={f.key}

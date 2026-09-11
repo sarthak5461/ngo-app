@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, COLLECTIONS } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/auth";
-import { requirePermission, PERMISSIONS } from "@/lib/auth/rbac";
+import { requirePermission, PERMISSIONS, ROLES } from "@/lib/auth/rbac";
 import { hashPassword } from "@/lib/auth/password";
 import { createUser, getUserByEmail } from "@/lib/services/users";
 
@@ -66,18 +66,19 @@ export async function POST(request) {
 
     const { name, email, password, role, status } = body;
 
-    if (!name || !email || !password || !role || !status) {
+    const normalizedName = typeof name === "string" ? name.trim() : "";
+
+    const normalizedEmail =
+      typeof email === "string" ? email.trim().toLowerCase() : "";
+
+    if (!normalizedName || !normalizedEmail || !password || !role || !status) {
       return NextResponse.json(
-        {
-          error: "All fields are required.",
-        },
-        {
-          status: 400,
-        },
+        { error: "All fields are required." },
+        { status: 400 },
       );
     }
 
-    const existing = await getUserByEmail(email);
+    const existing = await getUserByEmail(normalizedEmail);
 
     if (existing) {
       return NextResponse.json(
@@ -89,27 +90,31 @@ export async function POST(request) {
         },
       );
     }
+
+    const allowedRoles = Object.values(ROLES);
+
+    if (!allowedRoles.includes(role)) {
+      return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+    }
+
+    const allowedStatuses = ["active", "inactive"];
+
+    if (!allowedStatuses.includes(status)) {
+      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+    }
+
     const passwordHash = await hashPassword(password);
 
     const user = {
-      name: name.trim(),
-
-      email: email.trim().toLowerCase(),
-
+      name: normalizedName,
+      email: normalizedEmail,
       passwordHash,
-
       role,
-
       status,
-
       failedAttempts: 0,
-
       lockedUntil: null,
-
       lastLogin: null,
-
       createdAt: new Date(),
-
       updatedAt: new Date(),
     };
 
@@ -120,7 +125,7 @@ export async function POST(request) {
       message: "User created successfully.",
     });
   } catch (error) {
-    console.error("CREATE USER ERROR:", Error);
+    console.error("CREATE USER ERROR:", error);
 
     return NextResponse.json(
       {

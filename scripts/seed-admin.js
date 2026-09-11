@@ -4,8 +4,8 @@ import dotenv from "dotenv";
 
 dotenv.config({ path: ".env.local" });
 
-const uri = process.env.MONGODB_URI;
-const dbName = process.env.MONGODB_DB;
+const uri = process.env.MONGO_URL;
+const dbName = process.env.DB_NAME;
 
 async function seedAdmin() {
   const client = new MongoClient(uri);
