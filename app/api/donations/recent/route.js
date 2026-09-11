@@ -1,8 +1,10 @@
 import { handleCORS } from "@/lib/cors";
 import { NextResponse } from "next/server";
+import { getDb } from "@/lib/db";
 
 export async function GET(request) {
   try {
+    const db = await getDb();
     const docs = await db
       .collection("donations")
       .find({ status: "success" })
@@ -15,12 +17,15 @@ export async function GET(request) {
       cause: d.cause,
       createdAt: d.createdAt,
     }));
-    return handleCORS(NextResponse.json(cleaned));
+    return handleCORS(NextResponse.json(cleaned), request);
   } catch (error) {
     console.error("RECENT DONATION:", error);
-    return NextResponse.json(
-      { error: "Failed to Recent donation" },
-      { status: 500 },
+    return handleCORS(
+      NextResponse.json(
+        { error: "Failed to Recent donation" },
+        { status: 500 },
+      ),
+      request,
     );
   }
 }

@@ -24,15 +24,24 @@ export async function POST(request) {
     if (!order)
       return handleCORS(
         NextResponse.json({ error: "Order not found" }, { status: 404 }),
+        request,
       );
     const paymentId = `pay_${uuidv4().replace(/-/g, "").slice(0, 20)}`;
     const signature = signRazorpay(body.orderId, paymentId);
     return handleCORS(
-      NextResponse.json({ paymentId, signature, orderId: body.orderId }),
+      NextResponse.json({
+        paymentId,
+        signature,
+        orderId: body.orderId,
+      }),
+      request,
     );
   } catch (error) {
     console.error("MOCK PAY ERROR:", error);
 
-    return NextResponse.json({ error: "Failed to pay" }, { status: 500 });
+    return handleCORS(
+      NextResponse.json({ error: "Failed to pay" }, { status: 500 }),
+      request,
+    );
   }
 }

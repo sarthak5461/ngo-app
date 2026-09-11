@@ -40,6 +40,7 @@ export async function POST(request) {
     if (!id || !orderId || !paymentId || !signature) {
       return handleCORS(
         NextResponse.json({ error: "Missing payment fields" }, { status: 400 }),
+        request,
       );
     }
     const member = await db.collection("members").findOne({ id });
@@ -125,12 +126,21 @@ export async function POST(request) {
     }
 
     const { _id, ...clean } = final;
-    return handleCORS(NextResponse.json({ success: true, member: clean }));
+    return handleCORS(
+      NextResponse.json({
+        success: true,
+        member: clean,
+      }),
+      request,
+    );
   } catch (error) {
     console.error("MEMEBER COMPLETE ERROR:", error);
-    return NextResponse.json(
-      { error: "Failed to complete memeber" },
-      { status: 500 },
+    return handleCORS(
+      NextResponse.json(
+        { error: "Failed to complete member" },
+        { status: 500 },
+      ),
+      request,
     );
   }
 }

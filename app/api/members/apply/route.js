@@ -36,8 +36,7 @@ export async function POST(request) {
       return handleCORS(
         NextResponse.json(
           {
-            error:
-              "Too many membership applications. Please try again later.",
+            error: "Too many membership applications. Please try again later.",
           },
           {
             status: 429,
@@ -53,11 +52,7 @@ export async function POST(request) {
     const body = await request.json();
 
     // Validate request body
-    if (
-      !body ||
-      typeof body !== "object" ||
-      Array.isArray(body)
-    ) {
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
       return handleCORS(
         NextResponse.json(
           {
@@ -132,22 +127,16 @@ export async function POST(request) {
     const reason = body.reason.trim();
 
     const occupation =
-      typeof body.occupation === "string"
-        ? body.occupation.trim()
-        : "Other";
+      typeof body.occupation === "string" ? body.occupation.trim() : "Other";
 
-    const photo =
-      typeof body.photo === "string"
-        ? body.photo
-        : null;
+    const photo = typeof body.photo === "string" ? body.photo : null;
 
     // Name validation
     if (name.length < 2 || name.length > 100) {
       return handleCORS(
         NextResponse.json(
           {
-            error:
-              "Name must be between 2 and 100 characters.",
+            error: "Name must be between 2 and 100 characters.",
           },
           {
             status: 400,
@@ -177,8 +166,7 @@ export async function POST(request) {
       return handleCORS(
         NextResponse.json(
           {
-            error:
-              "Address must be between 5 and 500 characters.",
+            error: "Address must be between 5 and 500 characters.",
           },
           {
             status: 400,
@@ -223,8 +211,7 @@ export async function POST(request) {
       return handleCORS(
         NextResponse.json(
           {
-            error:
-              "Reason must be between 10 and 2000 characters.",
+            error: "Reason must be between 10 and 2000 characters.",
           },
           {
             status: 400,
@@ -260,8 +247,7 @@ export async function POST(request) {
       return handleCORS(
         NextResponse.json(
           {
-            error:
-              "Membership contribution must be a valid whole number.",
+            error: "Membership contribution must be a valid whole number.",
           },
           {
             status: 400,
@@ -277,8 +263,7 @@ export async function POST(request) {
       return handleCORS(
         NextResponse.json(
           {
-            error:
-              "Minimum support contribution is ₹500.",
+            error: "Minimum support contribution is ₹500.",
           },
           {
             status: 400,
@@ -292,8 +277,7 @@ export async function POST(request) {
       return handleCORS(
         NextResponse.json(
           {
-            error:
-              "Maximum membership contribution is ₹8,000.",
+            error: "Maximum membership contribution is ₹8,000.",
           },
           {
             status: 400,
@@ -305,14 +289,11 @@ export async function POST(request) {
 
     // Photo validation
     if (photo) {
-      if (
-        !/^data:image\/(jpeg|jpg|png);base64,/i.test(photo)
-      ) {
+      if (!/^data:image\/(jpeg|jpg|png);base64,/i.test(photo)) {
         return handleCORS(
           NextResponse.json(
             {
-              error:
-                "Photo must be a JPG or PNG image.",
+              error: "Photo must be a JPG or PNG image.",
             },
             {
               status: 400,
@@ -338,8 +319,7 @@ export async function POST(request) {
         );
       }
 
-      const approximateSize =
-        Math.floor((base64Data.length * 3) / 4);
+      const approximateSize = Math.floor((base64Data.length * 3) / 4);
 
       if (approximateSize > MAX_PHOTO_SIZE) {
         return handleCORS(
@@ -358,9 +338,7 @@ export async function POST(request) {
 
     const db = await getDb();
 
-    const orderId = `order_${uuidv4()
-      .replace(/-/g, "")
-      .slice(0, 20)}`;
+    const orderId = `order_${uuidv4().replace(/-/g, "").slice(0, 20)}`;
 
     const id = uuidv4();
 
@@ -388,20 +366,16 @@ export async function POST(request) {
       updatedAt: new Date(),
     };
 
-    await db
-      .collection(COLLECTIONS.members)
-      .insertOne(memberDoc);
+    await db.collection(COLLECTIONS.members).insertOne(memberDoc);
 
-    await db
-      .collection(COLLECTIONS.memberOrders)
-      .insertOne({
-        id: uuidv4(),
-        orderId,
-        memberId: id,
-        amount,
-        status: "created",
-        createdAt: new Date(),
-      });
+    await db.collection(COLLECTIONS.memberOrders).insertOne({
+      id: uuidv4(),
+      orderId,
+      memberId: id,
+      amount,
+      status: "created",
+      createdAt: new Date(),
+    });
 
     return handleCORS(
       NextResponse.json({
@@ -417,13 +391,16 @@ export async function POST(request) {
   } catch (error) {
     console.error("APPLY MEMBER ERROR:", error);
 
-    return NextResponse.json(
-      {
-        error: "Failed to apply member",
-      },
-      {
-        status: 500,
-      },
+    return handleCORS(
+      NextResponse.json(
+        {
+          error: "Failed to apply member",
+        },
+        {
+          status: 500,
+        },
+      ),
+      request,
     );
   }
 }

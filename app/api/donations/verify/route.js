@@ -41,21 +41,25 @@ function newReceiptNumber() {
 
 export async function POST(request) {
   try {
-
-
-    const rateLimit= await checkRateLimit({
+    const rateLimit = await checkRateLimit({
       request,
       key: "donation-verify",
-      limit: 5, 
+      limit: 5,
       windowSeconds: 15 * 60, // 15 minutes
-    }); 
+    });
 
-    if(!rateLimit.success) {
-      return NextResponse.json(
-        { error: "Too many requests. Please try again later." },
-        { status: 429, headers: {
-          "Retry-After": String(rateLimit.retryAfter),
-        }, },
+    if (!rateLimit.success) {
+      return handleCORS(
+        NextResponse.json(
+          { error: "Too many requests. Please try again later." },
+          {
+            status: 429,
+            headers: {
+              "Retry-After": String(rateLimit.retryAfter),
+            },
+          },
+        ),
+        request,
       );
     }
 
@@ -120,9 +124,18 @@ export async function POST(request) {
 
     // Strip Mongo _id before returning
     const { _id, ...clean } = donation;
-    return handleCORS(NextResponse.json({ success: true, donation: clean }));
+    return handleCORS(
+      NextResponse.json({
+        success: true,
+        donation: clean,
+      }),
+      request,
+    );
   } catch (error) {
     console.error("DONATION VERIFY:", error);
-    return NextResponse.json({ error: "Failed to Verify" }, { status: 500 });
+    return handleCORS(
+      NextResponse.json({ error: "Failed to Verify" }, { status: 500 }),
+      request,
+    );
   }
 }

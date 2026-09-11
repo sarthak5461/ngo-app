@@ -1,9 +1,10 @@
 import { handleCORS } from "@/lib/cors";
 import { NextResponse } from "next/server";
-import { v4 as uuidv4 } from "uuid";
+import { getDb } from "@/lib/db";
 
 export async function GET(request, { params }) {
   try {
+    const db = await getDb();
     const id = params.id;
     const donation = await db.collection("donations").findOne({ id });
     if (!donation)
@@ -14,9 +15,9 @@ export async function GET(request, { params }) {
     return handleCORS(NextResponse.json(clean));
   } catch (error) {
     console.error("CREATE RECEIPT", error);
-    return NextResponse.json(
-      { error: "Failed to create receipt" },
-      { status: 500 },
+    return handleCORS(
+      NextResponse.json({ error: "Failed to create receipt" }, { status: 500 }),
+      request,
     );
   }
 }
