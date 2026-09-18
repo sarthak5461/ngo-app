@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback } from "react";
-import DonationDialog from "./donation-dialog";
+import { createContext, useContext, useCallback } from "react";
+import { toast } from "sonner";
 
 const DonateCtx = createContext({ open: () => {} });
 
@@ -10,22 +10,9 @@ export function useDonate() {
 }
 
 export default function DonateProvider({ children }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [defaultCause, setDefaultCause] = useState("general");
-
-  const open = useCallback((cause = "general") => {
-    setDefaultCause(typeof cause === "string" ? cause : "general");
-    setIsOpen(true);
+  const open = useCallback(() => {
+    toast.info("Online donations are coming soon.");
   }, []);
 
-  return (
-    <DonateCtx.Provider value={{ open }}>
-      {children}
-      <DonationDialog
-        open={isOpen}
-        onOpenChange={setIsOpen}
-        defaultCause={defaultCause}
-      />
-    </DonateCtx.Provider>
-  );
+  return <DonateCtx.Provider value={{ open }}>{children}</DonateCtx.Provider>;
 }

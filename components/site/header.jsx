@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, HandHeart } from "lucide-react";
 import { useContent, useContentList } from "./content-provider";
 import { usePathname } from "next/navigation";
-import DonationDialog from "@/components/site/donation-dialog";
+// import DonationDialog from "@/components/site/donation-dialog";
+import { toast } from "sonner";
 
 const DEFAULT_NAV = [
   { label: "Home", href: "/", enabled: true },
@@ -56,8 +57,8 @@ export default function SiteHeader({ solid = false }) {
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${isLight ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100" : "bg-transparent"}`}
     >
-      <div className='container flex items-center justify-between py-3'>
-        <Link href='/' className='flex items-center gap-2.5'>
+      <div className="container flex items-center justify-between py-3">
+        <Link href="/" className="flex items-center gap-2.5">
           <div
             className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-md ${isLight ? "gradient-trust" : "bg-white/15 backdrop-blur border border-white/30"}`}
           >
@@ -65,13 +66,13 @@ export default function SiteHeader({ solid = false }) {
               <img
                 src={brandLogo}
                 alt={brandTitle}
-                className='w-full h-full object-cover rounded-xl'
+                className="w-full h-full object-cover rounded-xl"
               />
             ) : (
-              <HandHeart className='w-6 h-6 text-white' />
+              <HandHeart className="w-6 h-6 text-white" />
             )}
           </div>
-          <div className='hidden sm:block leading-tight'>
+          <div className="hidden sm:block leading-tight">
             <div
               className={`font-bold text-sm ${isLight ? "text-slate-900" : "text-white"}`}
             >
@@ -85,7 +86,7 @@ export default function SiteHeader({ solid = false }) {
           </div>
         </Link>
 
-        <nav className='hidden xl:flex items-center gap-7'>
+        <nav className="hidden xl:flex items-center gap-7">
           {NAV.map((it, i) => (
             <Link
               key={`${it.href}-${i}`}
@@ -99,11 +100,11 @@ export default function SiteHeader({ solid = false }) {
           ))}
         </nav>
 
-        <div className='flex items-center gap-2'>
+        <div className="flex items-center gap-2">
           {isProgramPage ? (
             <Button
-              onClick={() => setDonationOpen(true)}
-              className='hidden sm:inline-flex bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-md'
+              onClick={() => toast.info("Online donations are coming soon.")}
+              className="hidden sm:inline-flex bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-md"
             >
               Donate Now
             </Button>
@@ -111,49 +112,43 @@ export default function SiteHeader({ solid = false }) {
             ctaEnabled && (
               <Button
                 asChild
-                className='hidden sm:inline-flex bg-blue-800 hover:bg-blue-900 text-white font-semibold shadow-md'
+                className="hidden sm:inline-flex bg-blue-800 hover:bg-blue-900 text-white font-semibold shadow-md"
               >
                 <Link href={ctaHref || "/membership"}>{ctaLabel}</Link>
               </Button>
             )
           )}
 
-          <DonationDialog
-            open={donationOpen}
-            onOpenChange={setDonationOpen}
-            defaultCause='education'
-          />
-
           <button
             onClick={() => setMobileOpen(true)}
             className={`xl:hidden p-2 rounded-md ${isLight ? "text-slate-900" : "text-white"}`}
-            aria-label='Open menu'
+            aria-label="Open menu"
           >
-            <Menu className='w-6 h-6' />
+            <Menu className="w-6 h-6" />
           </button>
         </div>
       </div>
 
       {mobileOpen && (
-        <div className='fixed inset-0 z-50 bg-white'>
-          <div className='container flex justify-between items-center py-4 border-b'>
-            <span className='font-bold text-blue-900'>Menu</span>
+        <div className="fixed inset-0 z-50 bg-white">
+          <div className="container flex justify-between items-center py-4 border-b">
+            <span className="font-bold text-blue-900">Menu</span>
             <button
               onClick={() => setMobileOpen(false)}
-              className='p-2'
-              aria-label='Close menu'
+              className="p-2"
+              aria-label="Close menu"
             >
-              <X className='w-6 h-6' />
+              <X className="w-6 h-6" />
             </button>
           </div>
-          <nav className='flex flex-col container gap-1 mt-2'>
+          <nav className="flex flex-col container gap-1 mt-2">
             {NAV.map((it, i) => (
               <Link
                 key={`${it.href}-${i}`}
                 href={it.href || "#"}
                 target={it.external ? "_blank" : undefined}
                 rel={it.external ? "noopener noreferrer" : undefined}
-                className='py-3 px-2 border-b text-slate-800 font-medium'
+                className="py-3 px-2 border-b text-slate-800 font-medium"
               >
                 {it.label}
               </Link>
@@ -161,7 +156,7 @@ export default function SiteHeader({ solid = false }) {
             {ctaEnabled && (
               <Button
                 asChild
-                className='mt-5 bg-blue-800 hover:bg-blue-900 text-white font-semibold'
+                className="mt-5 bg-blue-800 hover:bg-blue-900 text-white font-semibold"
                 onClick={() => setMobileOpen(false)}
               >
                 <Link href={ctaHref || "/membership"}>{ctaLabel}</Link>
