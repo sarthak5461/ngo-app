@@ -24,7 +24,7 @@ import {
 function ToolbarButton({ icon: Icon, active, onClick, title }) {
   return (
     <button
-      type='button'
+      type="button"
       title={title}
       onClick={onClick}
       className={`flex h-9 w-9 items-center justify-center rounded-md transition-all
@@ -118,25 +118,25 @@ export default function RichTextEditor({ value, onChange }) {
   // };
 
   return (
-    <div className='ProseMirror border rounded-xl overflow-hidden bg-white'>
-      <div className='border-b bg-gray-50 px-3 py-2 flex flex-wrap items-center gap-1'>
-        <div className='w-px h-6 bg-gray-300 mx-1' />
+    <div className="ProseMirror border rounded-xl overflow-hidden bg-white">
+      <div className="border-b bg-gray-50 px-3 py-2 flex flex-wrap items-center gap-1">
+        <div className="w-px h-6 bg-gray-300 mx-1" />
         <ToolbarButton
           icon={Bold}
-          title='Bold'
+          title="Bold"
           active={editor?.isActive("bold")}
           onClick={() => editor?.chain().focus().toggleBold().run()}
         />
 
         <ToolbarButton
           icon={Italic}
-          title='Italic'
+          title="Italic"
           active={editor?.isActive("italic")}
           onClick={() => editor?.chain().focus().toggleItalic().run()}
         />
         <ToolbarButton
           icon={Heading1}
-          title='Heading 1'
+          title="Heading 1"
           active={editor?.isActive("heading", { level: 1 })}
           onClick={() =>
             editor?.chain().focus().toggleHeading({ level: 1 }).run()
@@ -144,7 +144,7 @@ export default function RichTextEditor({ value, onChange }) {
         />
         <ToolbarButton
           icon={Heading2}
-          title='Heading 2'
+          title="Heading 2"
           active={editor?.isActive("heading", { level: 2 })}
           onClick={() =>
             editor?.chain().focus().toggleHeading({ level: 2 }).run()
@@ -152,7 +152,7 @@ export default function RichTextEditor({ value, onChange }) {
         />
         <ToolbarButton
           icon={Heading3}
-          title='Heading 3'
+          title="Heading 3"
           active={editor?.isActive("heading", { level: 3 })}
           onClick={() =>
             editor?.chain().focus().toggleHeading({ level: 3 }).run()
@@ -160,20 +160,20 @@ export default function RichTextEditor({ value, onChange }) {
         />
         <ToolbarButton
           icon={List}
-          title='Bullet List'
+          title="Bullet List"
           active={editor?.isActive("bulletList")}
           onClick={() => editor?.chain().focus().toggleBulletList().run()}
         />
 
         <ToolbarButton
           icon={ListOrdered}
-          title='Numbered List'
+          title="Numbered List"
           active={editor?.isActive("orderedList")}
           onClick={() => editor?.chain().focus().toggleOrderedList().run()}
         />
         <ToolbarButton
           icon={Link2}
-          title='Insert Link'
+          title="Insert Link"
           active={editor?.isActive("link")}
           onClick={() => {
             const attrs = editor.getAttributes("link");
@@ -184,20 +184,20 @@ export default function RichTextEditor({ value, onChange }) {
         />
         <ToolbarButton
           icon={Quote}
-          title='Quote'
+          title="Quote"
           active={editor?.isActive("blockquote")}
           onClick={() => editor?.chain().focus().toggleBlockquote().run()}
         />
         <ToolbarButton
           icon={ImagePlus}
-          title='Insert Image'
+          title="Insert Image"
           active={false}
           onClick={() => setMediaPickerOpen(true)}
         />
 
         <ToolbarButton
           icon={Code2}
-          title='Edit HTML'
+          title="Edit HTML"
           active={showHtmlEditor}
           onClick={() => {
             setHtmlDraft(editor?.getHTML() || "");
@@ -218,35 +218,35 @@ export default function RichTextEditor({ value, onChange }) {
           }}
         />
       </div>
-      <div className='min-h-[500px]'>
-        <EditorContent editor={editor} className='max-w-none p-3' />
+      <div className="min-h-[500px]">
+        <EditorContent editor={editor} className="max-w-none p-3" />
         {showHtmlEditor && (
-          <div className='fixed inset-0 z-50 bg-black/50 flex items-center justify-center'>
-            <div className='bg-white rounded-xl w-[90vw] max-w-5xl h-[80vh] shadow-2xl flex flex-col'>
-              <div className='border-b px-6 py-4 flex items-center justify-between'>
-                <h3 className='font-semibold text-lg'>HTML Source Editor</h3>
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+            <div className="bg-white rounded-xl w-[90vw] max-w-5xl h-[80vh] shadow-2xl flex flex-col">
+              <div className="border-b px-6 py-4 flex items-center justify-between">
+                <h3 className="font-semibold text-lg">HTML Source Editor</h3>
 
                 <button onClick={() => setShowHtmlEditor(false)}>✕</button>
               </div>
 
-              <div className='flex-1 p-4'>
+              <div className="flex-1 p-4">
                 <textarea
                   value={htmlDraft}
                   onChange={(e) => setHtmlDraft(e.target.value)}
-                  className='w-full h-full border rounded-lg p-4 font-mono text-sm'
+                  className="w-full h-full border rounded-lg p-4 font-mono text-sm"
                 />
               </div>
 
-              <div className='border-t p-4 flex justify-end gap-3'>
+              <div className="border-t p-4 flex justify-end gap-3">
                 <button
-                  className='px-4 py-2 border rounded'
+                  className="px-4 py-2 border rounded"
                   onClick={() => setShowHtmlEditor(false)}
                 >
                   Cancel
                 </button>
 
                 <button
-                  className='px-4 py-2 bg-blue-600 text-white rounded'
+                  className="px-4 py-2 bg-blue-600 text-white rounded"
                   onClick={() => {
                     editor?.chain().focus().setContent(htmlDraft).run();
 
@@ -308,7 +308,6 @@ export default function RichTextEditor({ value, onChange }) {
           setShowLinkDialog(false);
         }}
       />
-      ;
     </div>
   );
 }
