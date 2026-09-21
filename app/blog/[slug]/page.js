@@ -12,7 +12,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Quote as QuoteIcon,
-  User,
   HandHeart,
 } from "lucide-react";
 import RichText from "@/components/site/rich-text";
@@ -88,37 +87,37 @@ export default async function BlogPostPage({ params }) {
   return (
     <SiteShell solidHeader={false}>
       {/* Hero */}
-      <section className='relative h-[55vh] min-h-[400px] w-full overflow-hidden'>
+      <section className="relative h-[55vh] min-h-[400px] w-full overflow-hidden">
         <img
           src={post.hero?.coverImage}
           alt={post.hero?.title}
-          className='absolute inset-0 w-full h-full object-cover'
+          className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className='absolute inset-0 hero-overlay' />
-        <div className='relative container h-full flex flex-col justify-end pb-12 pt-24'>
+        <div className="absolute inset-0 hero-overlay" />
+        <div className="relative container h-full flex flex-col justify-end pb-12 pt-24">
           <Link
-            href='/blog'
-            className='text-white/80 hover:text-white text-sm flex items-center gap-1.5 mb-5'
+            href="/blog"
+            className="text-white/80 hover:text-white text-sm flex items-center gap-1.5 mb-5"
           >
-            <ArrowLeft className='w-4 h-4' /> Back to all posts
+            <ArrowLeft className="w-4 h-4" /> Back to all posts
           </Link>
           <Badge className={`w-fit mb-4 ${post.hero?.category}`}>
             {formatCategory(post.hero?.category)}
           </Badge>
-          <h1 className='font-[Playfair_Display] text-4xl lg:text-5xl font-bold text-white max-w-4xl leading-tight mb-5'>
+          <h1 className="font-[Playfair_Display] text-4xl lg:text-5xl font-bold text-white max-w-4xl leading-tight mb-5">
             {post.hero?.title}
           </h1>
-          <div className='flex flex-wrap items-center gap-x-5 gap-y-2 text-white/85 text-sm'>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-white/85 text-sm">
             {/* <span className='flex items-center gap-1.5'>
               <User className='w-4 h-4' /> {post.author} —{" "}
               <span className='text-white/65'>{post.authorRole}</span>
             </span> */}
-            <span className='flex items-center gap-1.5'>
-              <Calendar className='w-4 h-4' />{" "}
+            <span className="flex items-center gap-1.5">
+              <Calendar className="w-4 h-4" />{" "}
               {formatDate(post.publishedAt || post.createdAt)}
             </span>
-            <span className='flex items-center gap-1.5'>
-              <Clock className='w-4 h-4' />
+            <span className="flex items-center gap-1.5">
+              <Clock className="w-4 h-4" />
               {getReadingTime(post.content)} min read
             </span>
           </div>
@@ -126,9 +125,9 @@ export default async function BlogPostPage({ params }) {
       </section>
 
       {/* Article */}
-      <section className='py-14 bg-white'>
-        <article className='container max-w-3xl'>
-          <p className='text-xl text-slate-600 leading-relaxed mb-8 pb-8 border-b font-medium italic'>
+      <section className="py-14 bg-white">
+        <article className="container max-w-3xl">
+          <p className="text-xl text-slate-600 leading-relaxed mb-8 pb-8 border-b font-medium italic">
             {post.hero?.excerpt}
           </p>
           <RichText content={post.content} />
@@ -156,67 +155,67 @@ export default async function BlogPostPage({ params }) {
             </CardContent>
           </Card>*/}
 
-          {/* Membership CTA mid-article (cause-driven, non-aggressive) */}
-          <Card className='border-0 shadow-xl mt-10 gradient-trust text-white'>
-            <CardContent className='p-8 text-center'>
-              <HandHeart className='w-10 h-10 text-amber-300 mx-auto mb-3' />
-              <h3 className='font-[Playfair_Display] text-2xl font-bold mb-2'>
+          {/* Membership CTA mid-article (cause-driven, non-aggressive) 
+          <Card className="border-0 shadow-xl mt-10 gradient-trust text-white">
+            <CardContent className="p-8 text-center">
+              <HandHeart className="w-10 h-10 text-amber-300 mx-auto mb-3" />
+              <h3 className="font-[Playfair_Display] text-2xl font-bold mb-2">
                 Stand with the Trust.
               </h3>
-              <p className='text-white/85 mb-5 max-w-md mx-auto'>
+              <p className="text-white/85 mb-5 max-w-md mx-auto">
                 Stories like this run on the trust of our members. Become one —
                 a simple application and a token contribution.
               </p>
               <Button
                 asChild
-                size='lg'
-                className='bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold h-12 px-7 shadow-xl shadow-amber-500/30'
+                size="lg"
+                className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold h-12 px-7 shadow-xl shadow-amber-500/30"
               >
-                <Link href='/membership'>
-                  <HandHeart className='w-4 h-4 mr-2' /> Become a Member
+                <Link href="/membership">
+                  <HandHeart className="w-4 h-4 mr-2" /> Become a Member
                 </Link>
               </Button>
             </CardContent>
-          </Card>
+          </Card>*/}
         </article>
       </section>
 
       {/* Related */}
       {related.length > 0 && (
-        <section className='py-14 bg-slate-50'>
-          <div className='container'>
-            <div className='flex items-end justify-between mb-8'>
-              <h2 className='font-[Playfair_Display] text-3xl font-bold text-slate-900'>
+        <section className="py-14 bg-slate-50">
+          <div className="container">
+            <div className="flex items-end justify-between mb-8">
+              <h2 className="font-[Playfair_Display] text-3xl font-bold text-slate-900">
                 Continue reading
               </h2>
-              <Button variant='ghost' asChild className='hidden md:inline-flex'>
-                <Link href='/blog'>
-                  All posts <ArrowRight className='w-4 h-4 ml-2' />
+              <Button variant="ghost" asChild className="hidden md:inline-flex">
+                <Link href="/blog">
+                  All posts <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
               </Button>
             </div>
-            <div className='grid md:grid-cols-3 gap-5'>
+            <div className="grid md:grid-cols-3 gap-5">
               {related.map((r) => (
-                <Link key={r.slug} href={`/blog/${r.slug}`} className='group'>
-                  <Card className='border-0 shadow-md hover:shadow-xl transition overflow-hidden h-full bg-white'>
-                    <div className='relative h-44 overflow-hidden'>
+                <Link key={r.slug} href={`/blog/${r.slug}`} className="group">
+                  <Card className="border-0 shadow-md hover:shadow-xl transition overflow-hidden h-full bg-white">
+                    <div className="relative h-44 overflow-hidden">
                       <img
                         src={r.image}
                         alt={r.title}
-                        className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-700'
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       />
                     </div>
-                    <CardContent className='p-5'>
+                    <CardContent className="p-5">
                       <Badge
-                        variant='secondary'
-                        className={`mb-2 ${CATEGORY_COLOR[r.category]}`}
+                        variant="secondary"
+                        className={`mb-2 $[r.category]}`}
                       >
-                        {CATEGORY_LABEL[r.category]}
+                        {r.category}
                       </Badge>
-                      <h4 className='font-bold text-slate-900 mb-1 group-hover:text-blue-800 transition leading-snug'>
+                      <h4 className="font-bold text-slate-900 mb-1 group-hover:text-blue-800 transition leading-snug">
                         {r.title}
                       </h4>
-                      <p className='text-sm text-slate-600 line-clamp-2'>
+                      <p className="text-sm text-slate-600 line-clamp-2">
                         {r.excerpt}
                       </p>
                     </CardContent>

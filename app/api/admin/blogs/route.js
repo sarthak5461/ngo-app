@@ -20,7 +20,10 @@ export async function GET(request) {
     return forbidden;
   }
 
-  const rows = await listBlogs({});
+  const rows = await listBlogs({
+    page: 1,
+    limit: 100,
+  });
 
   // console.log("BLOGS:", rows);
 

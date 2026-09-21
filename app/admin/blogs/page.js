@@ -42,12 +42,12 @@ export default function BlogsPage() {
   }, []);
 
   return (
-    <div className='space-y-6'>
-      <div className='flex items-center justify-between'>
-        <h1 className='text-3xl font-bold'>Blogs</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Blogs</h1>
 
         <button
-          className='px-4 py-2 rounded bg-black text-white'
+          className="px-4 py-2 rounded bg-black text-white"
           onClick={async () => {
             const r = await fetch("/api/admin/blogs", {
               method: "POST",
@@ -62,16 +62,27 @@ export default function BlogsPage() {
         </button>
       </div>
 
-      <div className='space-y-3'>
-        {rows.map((r) => (
-          <Link key={r.id} href={`/admin/blogs/${r.id}`}>
-            <div className='border rounded p-4 hover:bg-slate-50 cursor-pointer flex justify-between'>
-              <div className='font-semibold'>{r.hero?.title}</div>
-
-              <div className='text-sm text-slate-500'>{r.status}</div>
+      <div className="space-y-3">
+        {rows.length === 0 ? (
+          <div className="border rounded-lg p-8 text-center">
+            <div className="text-lg font-semibold text-slate-700">
+              No blogs are published
             </div>
-          </Link>
-        ))}
+
+            <p className="mt-2 text-sm text-slate-500">
+              Published blogs will appear here.
+            </p>
+          </div>
+        ) : (
+          rows.map((r) => (
+            <Link key={r.id} href={`/admin/blogs/${r.id}`}>
+              <div className="border rounded p-4 hover:bg-slate-50 cursor-pointer flex justify-between">
+                <div className="font-semibold">{r.hero?.title}</div>
+                <div className="text-sm text-slate-500">{r.status}</div>
+              </div>
+            </Link>
+          ))
+        )}
       </div>
     </div>
   );

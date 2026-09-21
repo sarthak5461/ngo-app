@@ -30,17 +30,17 @@ export default function BlogEditor({ params }) {
   if (!blog) return <div>Loading...</div>;
 
   return (
-    <div className='max-w-5xl mx-auto p-6 space-y-6'>
-      <Button
+    <div className="max-w-5xl mx-auto p-6 space-y-6">
+      {/* <Button
         type='button'
         onClick={() => window.open(`/blog/preview/${blog.id}`, "_blank")}
       >
         Preview
-      </Button>
+      </Button> */}
 
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button variant='destructive'>Delete</Button>
+          <Button variant="destructive">Delete</Button>
         </AlertDialogTrigger>
 
         <AlertDialogContent>
@@ -79,8 +79,8 @@ export default function BlogEditor({ params }) {
       </AlertDialog>
 
       <input
-        className='w-full border rounded p-3'
-        placeholder='Blog Title'
+        className="w-full border rounded p-3"
+        placeholder="Blog Title"
         value={blog.hero?.title || ""}
         onChange={(e) => {
           const title = e.target.value;
@@ -103,8 +103,8 @@ export default function BlogEditor({ params }) {
         }}
       />
       <input
-        className='w-full border rounded p-3'
-        placeholder='Slug'
+        className="w-full border rounded p-3"
+        placeholder="Slug"
         value={blog.pageHeader?.slug || ""}
         onChange={(e) =>
           setBlog({
@@ -128,9 +128,9 @@ export default function BlogEditor({ params }) {
       />
 
       <textarea
-        className='w-full border rounded p-3'
+        className="w-full border rounded p-3"
         rows={3}
-        placeholder='Excerpt'
+        placeholder="Excerpt"
         value={blog.hero?.excerpt || ""}
         onChange={(e) =>
           setBlog({
@@ -143,33 +143,33 @@ export default function BlogEditor({ params }) {
         }
       />
 
-      <div className='space-y-3'>
-        <label className='block text-sm font-medium text-heading'>
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-heading">
           Cover Image
         </label>
 
         {blog.hero?.coverImage && (
           <img
             src={blog.hero.coverImage}
-            alt='Cover'
-            className='w-full max-w-md rounded-lg border'
+            alt="Cover"
+            className="w-full max-w-md rounded-lg border"
           />
         )}
 
         <button
-          type='button'
+          type="button"
           onClick={() => setCoverPickerOpen(true)}
-          className='cursor-pointer bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base block w-full shadow-xs px-4 py-2 text-left'
+          className="cursor-pointer bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base block w-full shadow-xs px-4 py-2 text-left"
         >
           Select from Media Library
         </button>
 
-        <p className='text-sm text-gray-500'>
+        <p className="text-sm text-gray-500">
           Upload a new image or choose an existing one.
         </p>
 
         <select
-          className='w-full border rounded p-3'
+          className="w-full border rounded p-3"
           value={blog.hero?.category || ""}
           onChange={(e) =>
             setBlog({
@@ -181,15 +181,15 @@ export default function BlogEditor({ params }) {
             })
           }
         >
-          <option value=''>Select Category</option>
+          <option value="">Select Category</option>
 
-          <option value='education'>Education</option>
-          <option value='healthcare'>Healthcare</option>
-          <option value='environment'>Environment</option>
-          <option value='csr'>CSR</option>
-          <option value='disaster-relief'>Disaster Relief</option>
-          <option value='women-empowerment'>Women Empowerment</option>
-          <option value='news'>News</option>
+          <option value="education">Education</option>
+          <option value="healthcare">Healthcare</option>
+          <option value="environment">Environment</option>
+          <option value="csr">CSR</option>
+          <option value="community">Community </option>
+          <option value="services">Services</option>
+          <option value="news">News</option>
         </select>
       </div>
 
@@ -208,8 +208,8 @@ export default function BlogEditor({ params }) {
       />
 
       <input
-        className='w-full border rounded p-3'
-        placeholder='SEO Title'
+        className="w-full border rounded p-3"
+        placeholder="SEO Title"
         value={blog.pageHeader?.seoTitle || ""}
         onChange={(e) =>
           setBlog({
@@ -223,9 +223,9 @@ export default function BlogEditor({ params }) {
       />
 
       <textarea
-        className='w-full border rounded p-3'
+        className="w-full border rounded p-3"
         rows={3}
-        placeholder='SEO Description'
+        placeholder="SEO Description"
         value={blog.pageHeader?.seoDescription || ""}
         onChange={(e) =>
           setBlog({
@@ -238,47 +238,80 @@ export default function BlogEditor({ params }) {
         }
       />
 
-      <select
-        className='mx-auto w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body'
-        value={blog.status}
-        onChange={(e) =>
-          setBlog({
-            ...blog,
-            status: e.target.value,
-          })
-        }
-      >
-        <option value='draft'>Draft</option>
-        <option value='published'>Published</option>
-        <option value='scheduled'>Scheduled</option>
-      </select>
-      {blog.status === "scheduled" && (
-        <div>
-          <label className='block mb-2 font-medium'>Publish Date</label>
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-heading">
+          Publication Status
+        </label>
 
-          <input
-            type='datetime-local'
-            className='w-full border rounded p-3'
-            value={
-              blog.publishedAt
-                ? new Date(blog.publishedAt).toISOString().slice(0, 16)
-                : ""
-            }
-            onChange={(e) =>
-              setBlog({
-                ...blog,
-                publishedAt: new Date(e.target.value).toISOString(),
-              })
-            }
-          />
-        </div>
-      )}
+        <select
+          className="mx-auto w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs"
+          value={blog.status}
+          onChange={(e) => {
+            const newStatus = e.target.value;
 
-      <div className='flex items-center mb-4'>
-        <label className='select-none ms-2 text-sm font-medium text-heading'>
+            setBlog({
+              ...blog,
+              status: newStatus,
+              // Only clear the date when explicitly changing to Draft
+              publishedAt: newStatus === "draft" ? null : blog.publishedAt,
+            });
+          }}
+        >
+          <option value="draft">Draft</option>
+          <option value="scheduled">Scheduled</option>
+          <option value="published">Published</option>
+        </select>
+
+        {/* Scheduled */}
+        {blog.status === "scheduled" && (
+          <div>
+            <label className="block mb-2 font-medium">Publish Date</label>
+
+            <input
+              type="datetime-local"
+              className="w-full border rounded p-3"
+              value={
+                blog.publishedAt
+                  ? new Date(blog.publishedAt).toISOString().slice(0, 16)
+                  : ""
+              }
+              onChange={(e) =>
+                setBlog({
+                  ...blog,
+                  publishedAt: e.target.value
+                    ? new Date(e.target.value).toISOString()
+                    : null,
+                })
+              }
+            />
+          </div>
+        )}
+
+        {/* Published */}
+        {blog.status === "published" && blog.publishedAt && (
+          <div>
+            <label className="block mb-2 font-medium">Published On</label>
+
+            <input
+              type="datetime-local"
+              className="w-full border rounded p-3 bg-gray-100"
+              value={new Date(blog.publishedAt).toISOString().slice(0, 16)}
+              readOnly
+            />
+
+            <p className="mt-1 text-sm text-gray-500">
+              This is the original publication date and cannot be changed while
+              editing the blog.
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center mb-4">
+        <label className="select-none ms-2 text-sm font-medium text-heading">
           <input
-            className='w-4 h-4 border border-default-medium rounded-xs bg-neutral-secondary-medium focus:ring-2 focus:ring-brand-soft'
-            type='checkbox'
+            className="w-4 h-4 border border-default-medium rounded-xs bg-neutral-secondary-medium focus:ring-2 focus:ring-brand-soft"
+            type="checkbox"
             checked={blog.featured}
             onChange={(e) =>
               setBlog({
@@ -290,10 +323,10 @@ export default function BlogEditor({ params }) {
           Featured
         </label>
 
-        <label className='select-none ms-2 text-sm font-medium text-heading'>
+        <label className="select-none ms-2 text-sm font-medium text-heading">
           <input
-            className='w-4 h-4 border border-default-medium rounded-xs bg-neutral-secondary-medium focus:ring-2 focus:ring-brand-soft'
-            type='checkbox'
+            className="w-4 h-4 border border-default-medium rounded-xs bg-neutral-secondary-medium focus:ring-2 focus:ring-brand-soft"
+            type="checkbox"
             checked={blog.popular}
             onChange={(e) =>
               setBlog({
@@ -306,22 +339,63 @@ export default function BlogEditor({ params }) {
         </label>
       </div>
       <button
-        className='px-4 py-2 bg-blue-600 text-white rounded'
+        className="px-4 py-2 bg-blue-600 text-white rounded"
         onClick={async () => {
-          const res = await fetch(`/api/admin/blogs/${params.id}`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(blog),
-          });
+          try {
+            const payload = {
+              ...blog,
+            };
 
-          if (!res.ok) {
+            // Draft → no publication date
+            if (blog.status === "draft") {
+              payload.publishedAt = null;
+            }
+
+            // Scheduled → require a date
+            if (blog.status === "scheduled") {
+              if (!blog.publishedAt) {
+                toast.error("Please select a publish date");
+                return;
+              }
+
+              const scheduledDate = new Date(blog.publishedAt);
+
+              if (Number.isNaN(scheduledDate.getTime())) {
+                toast.error("Invalid publish date");
+                return;
+              }
+
+              // If scheduled date is already in the past,
+              // treat it as published using the ORIGINAL date.
+              if (scheduledDate <= new Date()) {
+                payload.status = "published";
+                payload.publishedAt = scheduledDate.toISOString();
+              }
+            }
+
+            // Published → KEEP the existing publishedAt.
+            // Do NOT replace it with today's date.
+
+            const res = await fetch(`/api/admin/blogs/${params.id}`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) {
+              toast.error("Failed to save blog");
+              return;
+            }
+
+            setBlog(payload);
+
+            toast.success("Blog updated successfully!");
+          } catch (error) {
+            console.error("BLOG SAVE ERROR:", error);
             toast.error("Failed to save blog");
-            return;
           }
-
-          toast.success("Blog updated successfully!");
         }}
       >
         Save
