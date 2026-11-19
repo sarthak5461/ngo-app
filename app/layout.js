@@ -25,17 +25,21 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang='en'>
+    <html lang="en">
       <head>
-        <link rel='preconnect' href='https://fonts.googleapis.com' />
+        <meta
+          name="impact-site-verification"
+          value="11c0ca5f-dfdd-4eda-9626-1d439db977df"
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
-          rel='preconnect'
-          href='https://fonts.gstatic.com'
-          crossOrigin=''
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin=""
         />
         <link
-          href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap'
-          rel='stylesheet'
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap"
+          rel="stylesheet"
         />
         <script
           dangerouslySetInnerHTML={{
@@ -46,7 +50,7 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         {children}
-        <Toaster richColors position='top-right' />
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );
